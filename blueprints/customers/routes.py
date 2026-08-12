@@ -1,15 +1,18 @@
-from flask import jsonify, request
+from flask import g, jsonify, request
 from marshmallow import ValidationError
 from sqlalchemy import select
 
-from app.extensions import db
+from app.extensions import db, limiter
 from app.models import Customer
+from app.utils.util import roles_required, token_required
 
 from . import customers_bp
 from .schemas import customer_schema, customers_schema
 
 
 @customers_bp.route("", methods=["POST"])
+@limiter.limit("5 per day")
+@roles_required("admin")
 def create_customer():
     try:
         customer_data = customer_schema.load(request.json)
@@ -28,6 +31,7 @@ def create_customer():
 
 
 @customers_bp.route("", methods=["GET"])
+@roles_required("admin", "mechanic")
 def get_customers():
     query = select(Customer)
     customers = db.session.execute(query).scalars().all()
@@ -35,19 +39,29 @@ def get_customers():
 
 
 @customers_bp.route("/<int:customer_id>", methods=["GET"])
+@token_required
 def get_customer(customer_id):
     customer = db.session.get(Customer, customer_id)
     if not customer:
         return jsonify({"error": "Customer not found"}), 404
+    if g.current_user.role == "customer" and g.current_user.customer_id != customer_id:
+        return jsonify({"error": "Insufficient permissions"}), 403
+    if g.current_user.role not in {"admin", "mechanic", "customer"}:
+        return jsonify({"error": "Insufficient permissions"}), 403
 
     return customer_schema.jsonify(customer), 200
 
 
 @customers_bp.route("/<int:customer_id>", methods=["PUT"])
+@token_required
 def update_customer(customer_id):
     customer = db.session.get(Customer, customer_id)
     if not customer:
         return jsonify({"error": "Customer not found"}), 404
+    if g.current_user.role == "customer" and g.current_user.customer_id != customer_id:
+        return jsonify({"error": "Insufficient permissions"}), 403
+    if g.current_user.role not in {"admin", "customer"}:
+        return jsonify({"error": "Insufficient permissions"}), 403
 
     try:
         customer_data = customer_schema.load(request.json, partial=True)
@@ -62,14 +76,21 @@ def update_customer(customer_id):
 
 
 @customers_bp.route("/<int:customer_id>", methods=["DELETE"])
+@roles_required("admin")
 def delete_customer(customer_id):
     customer = db.session.get(Customer, customer_id)
     if not customer:
         return jsonify({"error": "Customer not found"}), 404
 
     if customer.service_tickets:
-        return jsonify({"error": "Customer has service tickets and cannot be deleted"}), 409
+        return jsonify(
+            {"error": "Customer has service tickets and cannot be deleted"}
+        ), 409
+    if customer.user:
+        return jsonify({"error": "Customer has a user account and cannot be deleted"}), 409
 
     db.session.delete(customer)
     db.session.commit()
-    return jsonify({"message": f"Customer id: {customer_id}, successfully deleted."}), 200
+    return jsonify(
+        {"message": f"Customer id: {customer_id}, successfully deleted."}
+    ), 200

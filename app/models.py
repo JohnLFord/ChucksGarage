@@ -14,15 +14,39 @@ service_ticket_mechanics = db.Table(
 )
 
 
+class User(Base):
+    __tablename__ = "users"
+    __table_args__ = (
+        db.CheckConstraint(
+            "role IN ('admin', 'mechanic', 'customer')", name="ck_users_role"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(db.String(360), nullable=False, unique=True)
+    password_hash: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    role: Mapped[str] = mapped_column(db.String(50), nullable=False, default="customer")
+    customer_id: Mapped[int | None] = mapped_column(
+        db.ForeignKey("customers.id"), nullable=True, unique=True
+    )
+    mechanic_id: Mapped[int | None] = mapped_column(
+        db.ForeignKey("mechanics.id"), nullable=True, unique=True
+    )
+
+    customer: Mapped["Customer | None"] = db.relationship(back_populates="user")
+    mechanic: Mapped["Mechanic | None"] = db.relationship(back_populates="user")
+
+
 class Customer(Base):
     __tablename__ = "customers"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(db.String(255), nullable=False)
     email: Mapped[str] = mapped_column(db.String(360), nullable=False, unique=True)
-    DOB: Mapped[date] = mapped_column(db.Date)
+    date_of_birth: Mapped[date] = mapped_column("DOB", db.Date)
 
     service_tickets: Mapped[list["Service_Ticket"]] = db.relationship(back_populates="customer")
+    user: Mapped["User | None"] = db.relationship(back_populates="customer")
 
 
 class Service_Ticket(Base):
@@ -54,5 +78,6 @@ class Mechanic(Base):
         secondary=service_ticket_mechanics,
         back_populates="mechanics",
     )
+    user: Mapped["User | None"] = db.relationship(back_populates="mechanic")
 
 
