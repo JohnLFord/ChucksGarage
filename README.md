@@ -6,7 +6,7 @@ Flask API for managing customers, mechanics, service tickets, part inventory, an
 
 - JWT-based authentication
 - Role-aware authorization (admin, mechanic, customer)
-- CRUD endpoints for customers, mechanics, and service tickets
+- CRUD endpoints for customers, mechanics, service tickets, and inventory parts
 - Modeled junction-table support for ordered parts
 - Postman collection: ChucksGarage.postman_collection.json
 
@@ -188,6 +188,28 @@ GET /service-tickets/parts/popular
 
 This endpoint uses a Python lambda to add quantities from every part-order line item, then sorts inventory from most used to least used. The response includes `total_used` beside each part's current `stock_quantity` for restocking decisions.
 
+## Inventory endpoints
+
+All inventory endpoints require a bearer token. Creating or deleting a part requires an admin role; admins and mechanics can update a part.
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `POST` | `/inventory` | Create a part with `name`, `sku`, and `stock_quantity`. |
+| `GET` | `/inventory` | List parts. Supports `search`, `sort=name` or `sort=stock`, `offset`, and `limit`. |
+| `GET` | `/inventory/<part_id>` | Get one part. |
+| `PUT` | `/inventory/<part_id>` | Update a part. |
+| `DELETE` | `/inventory/<part_id>` | Delete a part that has no service-ticket orders. |
+
+Example create body:
+
+```json
+{
+   "name": "Brake Pad Set",
+   "sku": "BR-100",
+   "stock_quantity": 20
+}
+```
+
 ## Common workflows
 
 ### Start the app
@@ -220,7 +242,7 @@ This script adds demo customers, mechanics, tickets, parts, and part-order recor
 ### Run tests
 
 ```bash
-python -m unittest discover -s tests
+python -m pytest -q
 ```
 
 ### Connect SQL Workbench
@@ -245,6 +267,7 @@ Use these prefixes exactly:
 - /customers
 - /mechanics
 - /service-tickets
+- /inventory
 
 Note: the service ticket path uses hyphens, not underscores.
 
@@ -253,5 +276,5 @@ Note: the service ticket path uses hyphens, not underscores.
 Run tests with:
 
 ```bash
-python -m unittest discover -s tests
+python -m pytest -q
 ```
