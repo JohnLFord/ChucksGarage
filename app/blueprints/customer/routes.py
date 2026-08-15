@@ -34,6 +34,21 @@ def create_customer():
 @roles_required("admin", "mechanic")
 def get_customers():
     query = select(Customer)
+    search = request.args.get("search", "", type=str)
+    if search:
+        query = query.where(Customer.name.ilike(f"%{search}%"))
+
+    if request.args.get("sort", "") == "name":
+        query = query.order_by(Customer.name)
+
+    offset = request.args.get("offset", 0, type=int)
+    if offset:
+        query = query.offset(offset)
+
+    limit = request.args.get("limit", type=int)
+    if limit is not None:
+        query = query.limit(limit)
+
     customers = db.session.execute(query).scalars().all()
     return customers_schema.jsonify(customers), 200
 

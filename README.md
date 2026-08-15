@@ -1,18 +1,39 @@
 # ChucksGarage API
 
-Flask API for managing customers, mechanics, service tickets, and user authentication.
+Flask API for managing customers, mechanics, service tickets, part inventory, and user authentication.
 
 ## What this repo includes
 
 - JWT-based authentication
 - Role-aware authorization (admin, mechanic, customer)
 - CRUD endpoints for customers, mechanics, and service tickets
+- Modeled junction-table support for ordered parts
 - Postman collection: ChucksGarage.postman_collection.json
 
 ## Requirements
 
 - Python 3.11+
 - MySQL
+- Flask + SQLAlchemy app already listed in requirements.txt
+
+## Assignment-ready data model note
+
+This app now includes a modeled junction table for service-ticket parts.
+
+Instead of a simple many-to-many table that only stores foreign keys, we use a real `ServiceTicketPart` model so each ordered item can keep metadata such as:
+
+- `quantity`
+- `unit_cost`
+- `part_id`
+- `service_ticket_id`
+
+This matches the lesson concept where a junction table may need extra information, such as order line items in a cafe or parts in a repair shop.
+
+The relationship pattern is:
+
+- one `Service_Ticket` can have many `ServiceTicketPart` records
+- one `Part` can appear across many service ticket orders
+- each row in `service_ticket_parts` stores the order details for a specific part on a specific ticket
 
 ## Setup
 
@@ -137,6 +158,36 @@ If login does not set token automatically, add this in the login request Tests t
 pm.collectionVariables.set("token", pm.response.json().auth_token);
 ```
 
+## Part-order example endpoints
+
+The parts-ordering feature is implemented as a modeled association table.
+
+### Add a part to a service ticket
+
+POST /service-tickets/<service_ticket_id>/parts
+
+Example JSON body:
+
+```json
+{
+  "part_id": 1,
+  "quantity": 2,
+  "unit_cost": 42.5
+}
+```
+
+### Get all ordered parts for a service ticket
+
+GET /service-tickets/<service_ticket_id>/parts
+
+This returns the list of part line items, including the associated part metadata and the quantity/cost values.
+
+### Find the most-used parts
+
+GET /service-tickets/parts/popular
+
+This endpoint uses a Python lambda to add quantities from every part-order line item, then sorts inventory from most used to least used. The response includes `total_used` beside each part's current `stock_quantity` for restocking decisions.
+
 ## Common workflows
 
 ### Start the app
@@ -157,6 +208,14 @@ Use the `Reg/Log -> AdminLog` request in Postman, or send this payload to `POST 
    "password": "admin-password"
 }
 ```
+
+### Seed demo data for repair tickets and part orders
+
+```bash
+python scripts/harden_existing_data.py
+```
+
+This script adds demo customers, mechanics, tickets, parts, and part-order records to help demonstrate the many-to-many-with-metadata relationship.
 
 ### Run tests
 

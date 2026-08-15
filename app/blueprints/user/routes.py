@@ -4,10 +4,10 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from app.blueprints.customer.schemas import customer_schema
 from app.extensions import db, limiter
 from app.models import Customer, User
 from app.utils.util import encode_token, token_required
-from blueprints.customers.schemas import customer_schema
 
 from . import user_bp
 from .schemas import user_schema

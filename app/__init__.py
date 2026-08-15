@@ -1,11 +1,12 @@
 from flask import Flask, jsonify
 from werkzeug.exceptions import BadRequest, MethodNotAllowed
 
-from blueprints.customers import customers_bp
-from blueprints.mechanics import mechanics_bp
-from blueprints.service_tickets import service_tickets_bp
-from blueprints.user import user_bp
-from .extensions import db, limiter, ma, migrate
+from .blueprints.customer import customers_bp
+from .blueprints.inventory import inventory_bp
+from .blueprints.mechanic import mechanics_bp
+from .blueprints.service_ticket import service_tickets_bp
+from .blueprints.user import user_bp
+from .extensions import cache, db, limiter, ma, migrate
 
 
 def create_app(config_object="config.DevelopmentConfig"):
@@ -17,6 +18,13 @@ def create_app(config_object="config.DevelopmentConfig"):
     db.init_app(app)
     migrate.init_app(app, db)
     limiter.init_app(app)
+    cache.init_app(
+        app,
+        config={
+            "CACHE_TYPE": "SimpleCache",
+            "CACHE_DEFAULT_TIMEOUT": 30,
+        },
+    )
 
     @app.errorhandler(BadRequest)
     def handle_bad_request(error):
@@ -35,5 +43,6 @@ def create_app(config_object="config.DevelopmentConfig"):
     app.register_blueprint(customers_bp, url_prefix="/customers")
     app.register_blueprint(mechanics_bp, url_prefix="/mechanics")
     app.register_blueprint(service_tickets_bp, url_prefix="/service-tickets")
+    app.register_blueprint(inventory_bp, url_prefix="/inventory")
 
     return app

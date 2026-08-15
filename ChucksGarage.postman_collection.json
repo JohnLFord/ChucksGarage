@@ -157,6 +157,33 @@
           "response": []
         },
         {
+          "name": "GetCustomersPaginated",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers?limit=1&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "1"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "GetCustomerById",
           "request": {
             "method": "GET",
@@ -272,6 +299,29 @@
               ],
               "path": [
                 "mechanics"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GetMostAssignedMechanics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mechanics?sort=most_tickets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mechanics"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "most_tickets"
+                }
               ]
             }
           },
@@ -484,6 +534,77 @@
                 "1",
                 "mechanics",
                 "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AddPartToST",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"part_id\": 1,\r\n  \"quantity\": 2,\r\n  \"unit_cost\": 42.5\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/service-tickets/1/parts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "service-tickets",
+                "1",
+                "parts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GetPartsForST",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/service-tickets/1/parts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "service-tickets",
+                "1",
+                "parts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GetPopularPartsLambda",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/service-tickets/parts/popular",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "service-tickets",
+                "parts",
+                "popular"
               ]
             }
           },

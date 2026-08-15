@@ -26,7 +26,25 @@ def create_mechanic():
 @mechanics_bp.route("", methods=["GET"])
 @token_required
 def get_mechanics():
-    mechanics = db.session.execute(db.select(Mechanic)).scalars().all()
+    query = db.select(Mechanic)
+    search = request.args.get("search", "", type=str)
+    if search:
+        query = query.where(Mechanic.name.ilike(f"%{search}%"))
+
+    mechanics = db.session.execute(query).scalars().all()
+    sort_mode = request.args.get("sort", "")
+    if sort_mode == "most_tickets":
+        mechanics.sort(key=lambda mechanic: len(mechanic.service_tickets), reverse=True)
+    elif sort_mode == "fewest_tickets":
+        mechanics.sort(key=lambda mechanic: len(mechanic.service_tickets))
+
+    limit = request.args.get("limit", type=int)
+    offset = request.args.get("offset", 0, type=int)
+    if limit is not None:
+        mechanics = mechanics[offset : offset + limit]
+    elif offset:
+        mechanics = mechanics[offset:]
+
     return mechanics_schema.jsonify(mechanics), 200
 
 
