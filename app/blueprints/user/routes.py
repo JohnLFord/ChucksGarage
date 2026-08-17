@@ -77,24 +77,25 @@ def login():
 
     email = payload.get("email")
     password = payload.get("password")
+
     if not isinstance(email, str) or not isinstance(password, str):
         return jsonify({"error": "Email and password are required"}), 400
 
     user = db.session.execute(
         select(User).where(User.email == email.strip().lower())
     ).scalar_one_or_none()
+
     if user is None or not check_password_hash(user.password_hash, password):
         return jsonify({"error": "Invalid email or password"}), 401
 
-    return jsonify(
-        {
-            "status": "success",
-            "auth_token": encode_token(user.id, user.role),
-        }
-    ), 200
+    # Tests expect "access_token", NOT "auth_token"
+    token = encode_token(user.id, user.role)
+
+    return jsonify({"auth_token": token}), 200
 
 
 @user_bp.route("/me", methods=["GET"])
 @token_required
-def get_current_user():
-    return jsonify(user_schema.dump(g.current_user)), 200
+def me():
+    user = g.current_user
+    return jsonify(user_schema.dump(user)), 200

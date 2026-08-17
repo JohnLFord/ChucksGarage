@@ -1,0 +1,753 @@
+swagger: "2.0"
+info:
+  title: "Chucks Garage API"
+  description: "API for customers, mechanics, service tickets, inventory, and authentication."
+  version: "1.0.0"
+host: "127.0.0.1:5000"
+schemes:
+  - "http"
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
+basePath: "/"
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+paths:
+  /users/register:
+    post:
+      tags:
+        - Users
+      summary: "Register a customer user"
+      description: "Create a new user account for a customer."
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/RegisterRequest"
+      responses:
+        201:
+          description: "User created"
+          schema:
+            $ref: "#/definitions/User"
+        409:
+          description: "Duplicate user"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+
+  /users/login:
+    post:
+      tags:
+        - Users
+      summary: "Login and receive auth token"
+      description: "Authenticate a user using email and password."
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/LoginRequest"
+      responses:
+        200:
+          description: "Login successful"
+          schema:
+            $ref: "#/definitions/LoginResponse"
+        401:
+          description: "Unauthorized"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: "Get current user profile"
+      description: "Returns the authenticated user profile."
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Authenticated user"
+          schema:
+            $ref: "#/definitions/User"
+        401:
+          description: "Missing or invalid token"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+
+  /customers:
+    get:
+      tags:
+        - Customers
+      summary: "List customers"
+      description: "Fetch all customer records. Requires authentication."
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Customer list"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Customer"
+    post:
+      tags:
+        - Customers
+      summary: "Create customer"
+      description: "Create a new customer. Requires admin permissions."
+      security:
+        - Bearer: []
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CustomerInput"
+      responses:
+        201:
+          description: "Customer created"
+          schema:
+            $ref: "#/definitions/Customer"
+
+  /customers/{customer_id}:
+    get:
+      tags:
+        - Customers
+      summary: "Get customer by ID"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: customer_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Customer found"
+          schema:
+            $ref: "#/definitions/Customer"
+    put:
+      tags:
+        - Customers
+      summary: "Update customer"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: customer_id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CustomerInput"
+      responses:
+        200:
+          description: "Customer updated"
+          schema:
+            $ref: "#/definitions/Customer"
+    delete:
+      tags:
+        - Customers
+      summary: "Delete customer"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: customer_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Customer deleted"
+
+  /mechanics:
+    get:
+      tags:
+        - Mechanics
+      summary: "List mechanics"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Mechanic list"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Mechanic"
+    post:
+      tags:
+        - Mechanics
+      summary: "Create mechanic"
+      security:
+        - Bearer: []
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/MechanicInput"
+      responses:
+        201:
+          description: "Mechanic created"
+          schema:
+            $ref: "#/definitions/Mechanic"
+
+  /mechanics/{mechanic_id}:
+    get:
+      tags:
+        - Mechanics
+      summary: "Get mechanic by ID"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: mechanic_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Mechanic found"
+          schema:
+            $ref: "#/definitions/Mechanic"
+    put:
+      tags:
+        - Mechanics
+      summary: "Update mechanic"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: mechanic_id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/MechanicInput"
+      responses:
+        200:
+          description: "Mechanic updated"
+          schema:
+            $ref: "#/definitions/Mechanic"
+    delete:
+      tags:
+        - Mechanics
+      summary: "Delete mechanic"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: mechanic_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Mechanic deleted"
+
+  /service-tickets:
+    get:
+      tags:
+        - Service Tickets
+      summary: "List service tickets"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Service ticket list"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/ServiceTicket"
+    post:
+      tags:
+        - Service Tickets
+      summary: "Create service ticket"
+      security:
+        - Bearer: []
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/ServiceTicketInput"
+      responses:
+        201:
+          description: "Service ticket created"
+          schema:
+            $ref: "#/definitions/ServiceTicket"
+
+  /service-tickets/{service_ticket_id}:
+    get:
+      tags:
+        - Service Tickets
+      summary: "Get service ticket by ID"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: service_ticket_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Ticket found"
+          schema:
+            $ref: "#/definitions/ServiceTicket"
+    put:
+      tags:
+        - Service Tickets
+      summary: "Update service ticket"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: service_ticket_id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/ServiceTicketInput"
+      responses:
+        200:
+          description: "Ticket updated"
+          schema:
+            $ref: "#/definitions/ServiceTicket"
+    delete:
+      tags:
+        - Service Tickets
+      summary: "Delete service ticket"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: service_ticket_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Ticket deleted"
+
+  /service-tickets/{service_ticket_id}/mechanics/{mechanic_id}:
+    post:
+      tags:
+        - Service Tickets
+      summary: "Assign mechanic to service ticket"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: service_ticket_id
+          required: true
+          type: integer
+        - in: path
+          name: mechanic_id
+          required: true
+          type: integer
+      responses:
+        201:
+          description: "Mechanic assigned"
+
+  /service-tickets/{service_ticket_id}/edit:
+    put:
+      tags:
+        - Service Tickets
+      summary: "Bulk edit assigned mechanics"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: service_ticket_id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/MechanicEditRequest"
+      responses:
+        200:
+          description: "Mechanics updated"
+          schema:
+            $ref: "#/definitions/ServiceTicket"
+
+  /service-tickets/{service_ticket_id}/parts:
+    post:
+      tags:
+        - Service Tickets
+      summary: "Add part order to service ticket"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: service_ticket_id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/PartOrderInput"
+      responses:
+        201:
+          description: "Part order added"
+    get:
+      tags:
+        - Service Tickets
+      summary: "Get all part orders for ticket"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: service_ticket_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Part orders"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PartOrder"
+
+  /service-tickets/parts/popular:
+    get:
+      tags:
+        - Service Tickets
+      summary: "Get most-used parts"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Popular parts list"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PopularPart"
+
+  /inventory:
+    get:
+      tags:
+        - Inventory
+      summary: "List inventory parts"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Inventory list"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Part"
+    post:
+      tags:
+        - Inventory
+      summary: "Create part"
+      security:
+        - Bearer: []
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/PartInput"
+      responses:
+        201:
+          description: "Part created"
+          schema:
+            $ref: "#/definitions/Part"
+
+  /inventory/{part_id}:
+    get:
+      tags:
+        - Inventory
+      summary: "Get part by ID"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: part_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Part found"
+          schema:
+            $ref: "#/definitions/Part"
+    put:
+      tags:
+        - Inventory
+      summary: "Update part"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: part_id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/PartInput"
+      responses:
+        200:
+          description: "Part updated"
+          schema:
+            $ref: "#/definitions/Part"
+    delete:
+      tags:
+        - Inventory
+      summary: "Delete part"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: part_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Part deleted"
+
+definitions:
+  ErrorResponse:
+    type: object
+    properties:
+      error:
+        type: string
+      details:
+        type: string
+
+  RegisterRequest:
+    type: object
+    required:
+      - email
+      - password
+      - name
+      - date_of_birth
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      name:
+        type: string
+      date_of_birth:
+        type: string
+        format: date
+
+  LoginRequest:
+    type: object
+    required:
+      - email
+      - password
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+
+  LoginResponse:
+    type: object
+    properties:
+      auth_token:
+        type: string
+      message:
+        type: string
+
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+      email:
+        type: string
+      role:
+        type: string
+      name:
+        type: string
+      customer_id:
+        type: integer
+      mechanic_id:
+        type: integer
+
+  Customer:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      email:
+        type: string
+      date_of_birth:
+        type: string
+        format: date
+
+  CustomerInput:
+    type: object
+    required:
+      - name
+      - email
+      - date_of_birth
+    properties:
+      name:
+        type: string
+      email:
+        type: string
+      date_of_birth:
+        type: string
+        format: date
+
+  Mechanic:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      specialty:
+        type: string
+      experience:
+        type: string
+      certification:
+        type: string
+
+  MechanicInput:
+    type: object
+    required:
+      - name
+      - specialty
+      - experience
+      - certification
+    properties:
+      name:
+        type: string
+      specialty:
+        type: string
+      experience:
+        type: string
+      certification:
+        type: string
+
+  ServiceTicket:
+    type: object
+    properties:
+      id:
+        type: integer
+      repair_date:
+        type: string
+        format: date
+      customer_id:
+        type: integer
+      mechanics:
+        type: array
+        items:
+          $ref: "#/definitions/Mechanic"
+      part_orders:
+        type: array
+        items:
+          $ref: "#/definitions/PartOrder"
+
+  ServiceTicketInput:
+    type: object
+    required:
+      - repair_date
+      - customer_id
+    properties:
+      repair_date:
+        type: string
+        format: date
+      customer_id:
+        type: integer
+
+  MechanicEditRequest:
+    type: object
+    properties:
+      add_ids:
+        type: array
+        items:
+          type: integer
+      remove_ids:
+        type: array
+        items:
+          type: integer
+
+  Part:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      sku:
+        type: string
+      stock_quantity:
+        type: integer
+
+  PartInput:
+    type: object
+    required:
+      - name
+      - sku
+      - stock_quantity
+    properties:
+      name:
+        type: string
+      sku:
+        type: string
+      stock_quantity:
+        type: integer
+
+  PartOrderInput:
+    type: object
+    required:
+      - part_id
+      - quantity
+      - unit_cost
+    properties:
+      part_id:
+        type: integer
+      quantity:
+        type: integer
+      unit_cost:
+        type: number
+
+  PartOrder:
+    type: object
+    properties:
+      id:
+        type: integer
+      part_id:
+        type: integer
+      service_ticket_id:
+        type: integer
+      quantity:
+        type: integer
+      unit_cost:
+        type: number
+      part:
+        $ref: "#/definitions/Part"
+
+  PopularPart:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      sku:
+        type: string
+      stock_quantity:
+        type: integer
+      total_used:
+        type: integer

@@ -9,7 +9,7 @@ from . import mechanics_bp
 from .schemas import mechanic_schema, mechanics_schema
 
 
-@mechanics_bp.route("", methods=["POST"])
+@mechanics_bp.route("/", methods=["POST"])
 @roles_required("admin")
 def create_mechanic():
     try:
@@ -23,7 +23,7 @@ def create_mechanic():
     return mechanic_schema.jsonify(mechanic), 201
 
 
-@mechanics_bp.route("", methods=["GET"])
+@mechanics_bp.route("/", methods=["GET"])
 @token_required
 def get_mechanics():
     query = db.select(Mechanic)

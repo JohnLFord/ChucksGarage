@@ -1,5 +1,9 @@
 from flask import Blueprint
 
-customers_bp = Blueprint("customers", __name__)
+customers_bp = Blueprint(
+    "customers", 
+    __name__, 
+    url_prefix="/customers"
+)
 
-from . import routes  # noqa: E402, F401
+from . import routes

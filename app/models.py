@@ -5,6 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from .extensions import Base, db
 
+
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (
@@ -36,7 +37,9 @@ class Customer(Base):
     email: Mapped[str] = mapped_column(db.String(360), nullable=False, unique=True)
     date_of_birth: Mapped[date] = mapped_column("DOB", db.Date)
 
-    service_tickets: Mapped[list["Service_Ticket"]] = db.relationship(back_populates="customer")
+    service_tickets: Mapped[list["Service_Ticket"]] = db.relationship(
+        back_populates="customer"
+    )
     user: Mapped["User | None"] = db.relationship(back_populates="customer")
 
 
@@ -59,9 +62,7 @@ class MechanicsServiceTicket(Base):
     service_ticket: Mapped["Service_Ticket"] = db.relationship(
         back_populates="mechanic_assignments"
     )
-    mechanic: Mapped["Mechanic"] = db.relationship(
-        back_populates="ticket_assignments"
-    )
+    mechanic: Mapped["Mechanic"] = db.relationship(back_populates="ticket_assignments")
 
 
 class Service_Ticket(Base):
@@ -109,7 +110,9 @@ class ServiceTicketPart(Base):
     quantity: Mapped[int] = mapped_column(default=1)
     unit_cost: Mapped[float] = mapped_column(db.Float, nullable=False, default=0.0)
 
-    service_ticket: Mapped["Service_Ticket"] = db.relationship(back_populates="part_orders")
+    service_ticket: Mapped["Service_Ticket"] = db.relationship(
+        back_populates="part_orders"
+    )
     part: Mapped["Part"] = db.relationship(back_populates="service_ticket_parts")
 
 
@@ -129,3 +132,12 @@ class Mechanic(Base):
     user: Mapped["User | None"] = db.relationship(back_populates="mechanic")
 
 
+class Member(db.Model):
+    __tablename__ = "members"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+
+    def __repr__(self):
+        return f"<Member {self.name}>"

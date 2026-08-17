@@ -6,10 +6,9 @@ from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 
-limiter = Limiter(
-    key_func=get_remote_address, default_limits=["5 per minute"]
-)
+limiter = Limiter(key_func=get_remote_address, default_limits=["5 per minute"])
 cache = Cache()
+
 
 class Base(DeclarativeBase):
     pass

@@ -10,7 +10,7 @@ from . import customers_bp
 from .schemas import customer_schema, customers_schema
 
 
-@customers_bp.route("", methods=["POST"])
+@customers_bp.route("/", methods=["POST"])
 @limiter.limit("5 per day")
 @roles_required("admin")
 def create_customer():
@@ -30,7 +30,7 @@ def create_customer():
     return customer_schema.jsonify(new_customer), 201
 
 
-@customers_bp.route("", methods=["GET"])
+@customers_bp.route("/", methods=["GET"])
 @roles_required("admin", "mechanic")
 def get_customers():
     query = select(Customer)

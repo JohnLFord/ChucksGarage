@@ -11,7 +11,7 @@ from . import inventory_bp
 from .schemas import part_schema, parts_schema
 
 
-@inventory_bp.route("", methods=["POST"])
+@inventory_bp.route("/", methods=["POST"])
 @roles_required("admin")
 def create_part():
     try:
@@ -30,7 +30,7 @@ def create_part():
     return part_schema.jsonify(new_part), 201
 
 
-@inventory_bp.route("", methods=["GET"])
+@inventory_bp.route("/", methods=["GET"])
 @token_required
 def get_parts():
     query = select(Part)

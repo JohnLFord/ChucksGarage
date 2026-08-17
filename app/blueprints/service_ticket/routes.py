@@ -14,7 +14,7 @@ from .schemas import (
 )
 
 
-@service_tickets_bp.route("", methods=["POST"])
+@service_tickets_bp.route("/", methods=["POST"])
 @token_required
 def create_service_ticket():
     try:
@@ -37,7 +37,7 @@ def create_service_ticket():
     return service_ticket_schema.jsonify(service_ticket), 201
 
 
-@service_tickets_bp.route("", methods=["GET"])
+@service_tickets_bp.route("/", methods=["GET"])
 @token_required
 @cache.cached(
     timeout=30,
