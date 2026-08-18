@@ -1,6 +1,6 @@
 from dotenv.cli import get
 from flask_swagger_ui import get_swaggerui_blueprint
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from datetime import datetime, date
 from werkzeug.exceptions import BadRequest, MethodNotAllowed
 from app.utils.util import encode_token
@@ -150,5 +150,9 @@ def create_app(config_object="config.DevelopmentConfig"):
     app.register_blueprint(mechanics_bp)
     app.register_blueprint(service_tickets_bp)
     app.register_blueprint(user_bp, url_prefix="/users")
+
+    @app.route("/")
+    def dashboard():
+        return send_from_directory(app.static_folder, "ui/index.html")
 
     return app
