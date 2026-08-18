@@ -1,12 +1,7 @@
-from dotenv.cli import get
-from flask_swagger_ui import get_swaggerui_blueprint
 from flask import Flask, jsonify, request, send_from_directory
-from datetime import datetime, date
+from flask_swagger_ui import get_swaggerui_blueprint
 from werkzeug.exceptions import BadRequest, MethodNotAllowed
-from app.utils.util import encode_token
-from config import TestingConfig
 
-from .models import Member
 from .blueprints.customer import customers_bp
 from .blueprints.inventory import inventory_bp
 from .blueprints.mechanic import mechanics_bp
@@ -27,10 +22,7 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 def create_app(config_object="config.DevelopmentConfig"):
     app = Flask(__name__)
 
-    if config_object == "TestingConfig":
-        app.config.from_object(TestingConfig)
-    else:
-        app.config.from_object(config_object)
+    app.config.from_object(config_object)
 
     app.url_map.strict_slashes = False
 
@@ -65,91 +57,12 @@ def create_app(config_object="config.DevelopmentConfig"):
             }
         ), 405
 
-    @app.route("/members/", methods=["POST"])
-    def create_member():
-        payload = request.get_json(silent=True)
-
-        if not isinstance(payload, dict):
-            return jsonify({"error": "JSON payload required"}), 400
-
-        # Validate required fields
-        errors = {}
-
-        if "email" not in payload:
-            errors["email"] = ["Missing data for required field."]
-        if "name" not in payload:
-            errors["name"] = ["Missing data for required field."]
-        if "password" not in payload:
-            errors["password"] = ["Missing data for required field."]
-        if "DOB" not in payload:
-            errors["DOB"] = ["Missing data for required field."]
-
-        if errors:
-            return jsonify(errors), 400
-
-        member = Member(
-            name=payload["name"],
-            email=payload["email"],
-            DOB=datetime.strptime(payload["DOB"], "%Y-%m-%d").date(),
-            password=payload["password"],
-            role="customer",
-        )
-
-        db.session.add(member)
-        db.session.commit()
-        token = encode_token(member.id, member.role)
-        return jsonify(
-            {
-                "id": member.id,
-                "name": member.name,
-                "email": member.email,
-                "DOB": member.DOB.isoformat(),
-                "auth_token": token,
-            }
-        ), 201
-
-    @app.route("/members/", methods=["PUT"])
-    def update_member():
-        payload = request.get_json(silent=True)
-
-        if not isinstance(payload, dict):
-            return jsonify({"error": "JSON payload required"}), 400
-
-        member = db.session.get(Member, 1)  # Assuming only one member for simplicity
-
-        if member is None:
-            return jsonify({"error": "Member not found"}), 404
-
-        # Update allowed fields
-        if payload.get("name"):
-            member.name = payload["name"]
-        if payload.get("email"):
-            member.email = payload["email"]
-        if payload.get("password"):
-            member.password = payload["password"]
-        if payload.get("DOB"):
-            member.DOB = datetime.strptime(payload["DOB"], "%Y-%m-%d").date()
-
-        db.session.add(member)
-        db.session.commit()
-
-        token = encode_token(member.id, member.role)
-
-        return jsonify(
-            {
-                "id": member.id,
-                "name": member.name,
-                "email": member.email,
-                "DOB": member.DOB.isoformat(),
-                "auth_token": token,
-            }
-        ), 200
-
     app.register_blueprint(customers_bp)
     app.register_blueprint(inventory_bp)
     app.register_blueprint(mechanics_bp)
     app.register_blueprint(service_tickets_bp)
     app.register_blueprint(user_bp, url_prefix="/users")
+    app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
     @app.route("/")
     def dashboard():

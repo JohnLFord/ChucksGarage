@@ -12,12 +12,6 @@ class Config:
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
 
 
-class TestingConfig(Config):
-    SQLALCHEMY_DATABASE_URI = "sqlite:///testing.db"
-    DEBUG = True
-    CACHE_TYPE = "SimpleCache"
-
-
 class DevelopmentConfig(Config):
     DEBUG = True
 

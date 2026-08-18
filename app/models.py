@@ -132,15 +132,3 @@ class Mechanic(Base):
     user: Mapped["User | None"] = db.relationship(back_populates="mechanic")
 
 
-class Member(db.Model):
-    __tablename__ = "members"
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    DOB = db.Column(db.Date, nullable=False)
-    password = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(50), nullable=False, default="customer")
-
-    def __repr__(self):
-        return f"<Member {self.name}>"

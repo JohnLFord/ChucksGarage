@@ -3,9 +3,9 @@ info:
   title: "Chucks Garage API"
   description: "API for customers, mechanics, service tickets, inventory, and authentication."
   version: "1.0.0"
-host: "127.0.0.1:5000"
+host: "chucksgarage.onrender.com"
 schemes:
-  - "http"
+  - "https"
 consumes:
   - "application/json"
 produces:
