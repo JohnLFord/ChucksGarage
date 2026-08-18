@@ -115,7 +115,7 @@ def create_app(config_object="config.DevelopmentConfig"):
         if not isinstance(payload, dict):
             return jsonify({"error": "JSON payload required"}), 400
 
-        member = db.session.get(Member,  1)# Assuming only one member for simplicity
+        member = db.session.get(Member, 1)  # Assuming only one member for simplicity
 
         if member is None:
             return jsonify({"error": "Member not found"}), 404
@@ -126,11 +126,10 @@ def create_app(config_object="config.DevelopmentConfig"):
         if payload.get("email"):
             member.email = payload["email"]
         if payload.get("password"):
-            member.password = payload["password"]    
+            member.password = payload["password"]
         if payload.get("DOB"):
             member.DOB = datetime.strptime(payload["DOB"], "%Y-%m-%d").date()
 
-        
         db.session.add(member)
         db.session.commit()
 
@@ -142,7 +141,7 @@ def create_app(config_object="config.DevelopmentConfig"):
                 "name": member.name,
                 "email": member.email,
                 "DOB": member.DOB.isoformat(),
-                "auth_token": token
+                "auth_token": token,
             }
         ), 200
 
