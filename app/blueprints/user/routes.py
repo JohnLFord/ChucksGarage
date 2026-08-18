@@ -6,7 +6,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.blueprints.customer.schemas import customer_schema
 from app.extensions import db, limiter
-from app.models import Customer, User
+from app.models import Customer, Member, User
 from app.utils.util import encode_token, token_required
 
 from . import user_bp
@@ -85,9 +85,19 @@ def login():
         select(User).where(User.email == email.strip().lower())
     ).scalar_one_or_none()
 
-    if user is None or not check_password_hash(user.password_hash, password):
-        return jsonify({"error": "Invalid email or password"}), 401
+    if user is None:
+        user = db.session.execute(
+        select(Member).where(Member.email == email.strip().lower())
+    ).scalar_one_or_none()
 
+    if hasattr(user, "password_hash"):
+        if not check_password_hash(user.password_hash, password):
+            return jsonify({"error": "Invalid email or password"}), 401
+    elif hasattr(user, "password"):
+        if user.password != password:
+            return jsonify({"error": "Invalid email or password"}), 401
+    else:
+        return jsonify({"error": "Invalid email or password"}), 401
     # Tests expect "access_token", NOT "auth_token"
     token = encode_token(user.id, user.role)
 
