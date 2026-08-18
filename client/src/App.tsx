@@ -79,12 +79,30 @@ function App() {
   const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
-    setBody(resource.createTemplate)
-  }, [resource])
+    if (!token) return
 
-  useEffect(() => {
-    if (token) void loadProfile()
-  }, [])
+    let cancelled = false
+    async function loadSavedProfile() {
+      try {
+        const result = await apiRequest<Entity>('/users/me', 'GET', token)
+        if (!cancelled) {
+          setActivity(result)
+          setUser(result.data)
+        }
+      } catch {
+        if (!cancelled) {
+          localStorage.removeItem('cg_token')
+          setToken('')
+          setUser(null)
+        }
+      }
+    }
+
+    void loadSavedProfile()
+    return () => {
+      cancelled = true
+    }
+  }, [token])
 
   async function run<T>(path: string, method: string, requestBody?: unknown): Promise<T | null> {
     setError('')
@@ -101,11 +119,6 @@ function App() {
     } finally {
       setLoading(false)
     }
-  }
-
-  async function loadProfile() {
-    const profile = await run<Entity>('/users/me', 'GET')
-    if (profile) setUser(profile)
   }
 
   async function loadRecords() {
@@ -182,7 +195,7 @@ function App() {
         <p className="nav-label">Live data</p>
         {resources.map((item) => {
           const Icon = item.icon
-          return <button key={item.id} className={item.id === resourceId ? 'nav-item active' : 'nav-item'} onClick={() => setResourceId(item.id)}><Icon size={18} />{item.label}</button>
+          return <button key={item.id} className={item.id === resourceId ? 'nav-item active' : 'nav-item'} onClick={() => { setResourceId(item.id); setBody(item.createTemplate) }}><Icon size={18} />{item.label}</button>
         })}
         <div className="sidebar-footer"><span className="live-dot" />Connected to Render</div>
       </aside>
