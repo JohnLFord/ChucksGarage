@@ -29,3 +29,20 @@
 	.nav-item, .nav-action, .secondary, .primary, .text-button { transition: none; }
 	.nav-item:hover, .nav-action:hover, .nav-action.selected, .secondary:hover, .text-button:hover, .primary:hover { animation: none; transform: none; }
 }
+
+/* Softer record highlights and a navy sidebar that blends into the workspace. */
+.app-shell { background: radial-gradient(circle at top left, #1e293b, #020617 58%, #050816); }
+.sidebar { background: linear-gradient(180deg, #172235 0%, #111c2c 100%); }
+.role-pill { color: #064f3b; background: #d7f3e0; }
+.nav-item:hover { background: linear-gradient(112deg, rgba(23, 34, 53, .92) 0%, rgba(56, 189, 248, .28) 40%, rgba(215, 243, 224, .16) 50%, rgba(34, 197, 94, .25) 60%, rgba(23, 34, 53, .92) 100%); }
+.nav-action:hover,
+.nav-action.selected { background: linear-gradient(112deg, rgba(23, 34, 53, .88) 0%, rgba(56, 189, 248, .23) 40%, rgba(215, 243, 224, .14) 50%, rgba(34, 197, 94, .18) 60%, rgba(23, 34, 53, .88) 100%); }
+.nav-action.selected .nav-method.get { color: #d7f3e0; }
+.method-badge { color: #075f4c; background: #d7f3e0; }
+th { color: #8e9baa; background: #e8ecf1; }
+td, th { border-bottom-color: rgba(148, 163, 184, .22); }
+tbody tr { transition: color .2s ease, background .2s ease, box-shadow .2s ease; }
+tbody tr:hover { color: #1b2737; background: linear-gradient(112deg, #d9e2ed 0%, #edf2f6 40%, #ffffff 50%, #d7f3e0 60%, #d9e2ed 100%); background-size: 220% 100%; box-shadow: inset 3px 0 0 #22c55e; animation: destinationSweep 1.3s linear infinite; }
+.endpoint code { color: #415267; background: #dfe6ed; }
+.json-label textarea,
+.record-id input { color: #415267; background: #e7edf2; }
