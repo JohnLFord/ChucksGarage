@@ -6,6 +6,8 @@ import {
   Apple,
   BookOpen,
   Download,
+  Eye,
+  EyeOff,
   LogOut,
   Moon,
   Package,
@@ -35,7 +37,7 @@ const resources: Resource[] = [
   { id: 'students', label: 'Students', singularLabel: 'Student', icon: UsersRound, path: '/students/', template: '{\n  "name": "New Student",\n  "email": "student@example.com",\n  "date_of_birth": "1990-01-01"\n}', columns: ['id', 'name', 'email', 'date_of_birth'], columnLabels: { id: 'ID', name: 'Student', email: 'Email', date_of_birth: 'Date of Birth' } },
   { id: 'teachers', label: 'Teachers', singularLabel: 'Teacher', icon: Apple, path: '/teachers/', template: '{\n  "name": "Taylor Morgan",\n  "specialty": "React",\n  "experience": "7 years",\n  "certification": "Certified Instructor"\n}', columns: ['id', 'name', 'specialty', 'experience', 'certification'], columnLabels: { id: 'ID', name: 'Teacher', specialty: 'Subject', experience: 'Experience', certification: 'Credentials' } },
   { id: 'lessons', label: 'Lessons', singularLabel: 'Lesson', icon: BookOpen, path: '/lessons/', template: '{\n  "name": "HTML Foundations",\n  "sku": "HTML-101",\n  "stock_quantity": 24\n}', columns: ['id', 'name', 'sku', 'stock_quantity'], columnLabels: { id: 'ID', name: 'Lesson', sku: 'Course Code', stock_quantity: 'Seats' } },
-  { id: 'sessions', label: '1:1 Sessions', singularLabel: '1:1 Session', icon: ClipboardList, path: '/sessions/', template: '{\n  "session_date": "2026-08-18",\n  "student_id": 1,\n  "teacher_id": 1,\n  "lesson_id": 1,\n  "notes": "Worked through the lesson objectives."\n}', columns: ['id', 'session_date', 'customer', 'teacher', 'lesson', 'notes'], columnLabels: { id: 'ID', session_date: 'Session Date', customer: 'Student', teacher: 'Teacher', lesson: 'Lesson', notes: 'What They Worked On' } },
+  { id: 'sessions', label: 'Sessions', singularLabel: 'Session', icon: ClipboardList, path: '/sessions/', template: '{\n  "session_date": "2026-08-18",\n  "student_id": 1,\n  "teacher_id": 1,\n  "lesson_id": 1,\n  "notes": "Worked through the lesson objectives."\n}', columns: ['id', 'session_date', 'student', 'teacher', 'lesson', 'notes'], columnLabels: { id: 'ID', session_date: 'Session Date', student: 'Student', teacher: 'Teacher', lesson: 'Lesson', notes: 'What They Worked On' } },
 ]
 
 const lessonPresets = ['HTML', 'CSS', 'React', 'SQL', 'Python', 'JavaScript', 'TypeScript', 'Firebase', 'Firestore', 'Auth0', 'Render', 'Vercel', 'CI/CD', 'Project Planning', 'Database Design']
@@ -60,7 +62,7 @@ function formatCell(record: Entity, column: string) {
   if (column === 'teacher') {
     return String((value as Entity | undefined)?.name ?? 'Unassigned')
   }
-  if (column === 'customer') {
+  if (column === 'student') {
     return String((value as Entity | undefined)?.name ?? 'Unassigned')
   }
   if (column === 'lesson') {
@@ -74,6 +76,7 @@ function App() {
   const [user, setUser] = useState<Entity | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [resourceId, setResourceId] = useState('students')
   const [method, setMethod] = useState<CrudMethod>('GET')
   const [expandedResourceId, setExpandedResourceId] = useState('students')
@@ -81,6 +84,8 @@ function App() {
   const [recordId, setRecordId] = useState('')
   const [endpointPath, setEndpointPath] = useState(resources[0].path)
   const [body, setBody] = useState(resources[0].template)
+  const [sessionFilters, setSessionFilters] = useState({ studentId: '', teacherId: '', lessonId: '', sessionDate: '' })
+  const [showSessionHistory, setShowSessionHistory] = useState(false)
   const [activity, setActivity] = useState<ApiResult | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -130,8 +135,17 @@ function App() {
     }
   }
 
-  async function readRecords(nextResource = resource) {
-    const data = await run<Entity[]>(nextResource.path, 'GET')
+  async function readRecords(nextResource = resource, useSessionFilters = false) {
+    const filters = useSessionFilters && nextResource.id === 'sessions'
+      ? new URLSearchParams([
+          ['student_id', sessionFilters.studentId],
+          ['teacher_id', sessionFilters.teacherId],
+          ['lesson_id', sessionFilters.lessonId],
+          ['session_date', sessionFilters.sessionDate],
+        ].filter(([, value]) => value))
+      : new URLSearchParams()
+    const query = filters.toString()
+    const data = await run<Entity[]>(`${nextResource.path}${query ? `?${query}` : ''}`, 'GET')
     if (data) setRecords(data)
   }
 
@@ -160,11 +174,26 @@ function App() {
     setResourceId(nextResource.id)
     setExpandedResourceId(nextResource.id)
     setMethod(nextMethod)
+    setShowSessionHistory(false)
     setRecordId('')
     setEndpointPath(defaultEndpoint(nextResource, nextMethod))
     setBody(nextResource.template)
     setError('')
     if (nextMethod === 'GET') void readRecords(nextResource)
+  }
+
+  function openSessionHistory() {
+    if (!isAdmin) return
+    const sessionsResource = resources.find((item) => item.id === 'sessions') ?? resources[0]
+    setResourceId('sessions')
+    setExpandedResourceId('sessions')
+    setMethod('GET')
+    setRecordId('')
+    setEndpointPath(sessionsResource.path)
+    setBody(sessionsResource.template)
+    setError('')
+    setShowSessionHistory(true)
+    void readRecords(sessionsResource, true)
   }
 
   function selectLessonPreset(lesson: string) {
@@ -223,7 +252,7 @@ function App() {
   }
 
   if (!token || !user) {
-    return <main className="login-shell"><section className="login-panel"><div className="brand-mark">CL</div><p className="eyebrow">Operations console</p><h1 className="login-wordmark">CodingLab</h1><p className="subtle">Sign in to manage live learning records through the deployed API.</p><form onSubmit={login} className="login-form"><label>Email<input value={email} type="email" onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input value={password} type="password" onChange={(event) => setPassword(event.target.value)} required /></label>{error && <p className="form-error">{error}</p>}<button className="primary" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</button></form><p className="login-note">Use the administrator account for create, update, and delete actions.</p></section></main>
+    return <main className="login-shell"><section className="login-panel"><div className="brand-mark">CL</div><p className="eyebrow">Operations console</p><h1 className="login-wordmark">CodingLab</h1><p className="subtle">Sign in to manage live learning records through the deployed API.</p><form onSubmit={login} className="login-form"><label>Email<input value={email} type="email" onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<span className="password-field"><input value={password} type={showPassword ? 'text' : 'password'} onChange={(event) => setPassword(event.target.value)} required /><button type="button" className="password-visibility" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Hide password' : 'Show password'} title={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></span></label>{error && <p className="form-error">{error}</p>}<button className="primary" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</button></form><p className="login-note">Use the administrator account for create, update, and delete actions.</p></section></main>
   }
 
   return <div className={lightTheme ? 'app-shell light-theme' : 'app-shell'}>
@@ -232,9 +261,9 @@ function App() {
       const Icon = item.icon
       const expanded = item.id === expandedResourceId
       return <div key={item.id} className="nav-group"><button className={item.id === resourceId ? 'nav-item active' : 'nav-item'} onClick={() => setExpandedResourceId(expanded ? '' : item.id)}><Icon size={18} />{item.label}<ChevronDown className={expanded ? 'chevron open' : 'chevron'} size={16} /></button>{expanded && <div className="nav-actions">{actions.map((itemAction) => <button key={itemAction.method} className={item.id === resourceId && method === itemAction.method ? 'nav-action selected' : 'nav-action'} onClick={() => selectAction(item, itemAction.method)}><span className={`nav-method ${itemAction.method.toLowerCase()}`}>{itemAction.method}</span><span>{itemAction.label}</span></button>)}</div>}</div>
-    })}<div className="sidebar-footer"><span className="live-dot" />Connected to Render</div></aside>
+    })}<div className="history-nav"><p className="nav-label">Reports</p><button className={showSessionHistory ? 'history-nav-item active' : 'history-nav-item'} onClick={openSessionHistory} disabled={!isAdmin} title={isAdmin ? 'View and filter all sessions' : 'Administrator access required'}><ClipboardList size={18} />Session History</button></div><div className="sidebar-footer"><span className="live-dot" />Connected to Render</div></aside>
     <main className="workspace"><section className="page-heading"><div><p className="eyebrow">{action.label} / {method}</p><h1>{resource.label}</h1><p className="subtle">Choose an action in the sidebar, then run the live request below.</p></div><button className="secondary" onClick={() => readRecords()} disabled={loading}><RefreshCw size={17} />Read records</button></section>
-      <section className="data-card"><div className="card-title"><div><h2>{resource.label} table</h2><span>{records.length} loaded record{records.length === 1 ? '' : 's'}</span></div><div className="table-actions"><button className="secondary compact" onClick={exportCsv} disabled={loading} title={`Export ${resource.label} CSV`}><Download size={16} /></button><button className="secondary compact" onClick={() => readRecords()} disabled={loading} title={`Refresh ${resource.label}`}><RefreshCw size={16} /></button></div></div>{records.length === 0 ? <div className="empty-state"><Package size={25} /><p>No records loaded yet.</p><button className="text-button" onClick={() => readRecords()}>Read {resource.label.toLowerCase()}</button></div> : <div className="table-wrap"><table><thead><tr>{resource.columns.map((column) => <th key={column}>{resource.columnLabels[column]}</th>)}</tr></thead><tbody>{records.map((record) => <tr key={record.id}>{resource.columns.map((column) => <td key={column}>{formatCell(record, column)}</td>)}</tr>)}</tbody></table></div>}{resource.id === 'lessons' && method === 'GET' && <div className="lesson-catalog"><div><h3>Add curriculum lessons</h3><p>These presets open the Create Lesson form with the course details ready.</p></div><div className="lesson-presets">{lessonPresets.map((lesson) => <button type="button" key={lesson} onClick={() => { selectAction(resource, 'POST'); selectLessonPreset(lesson) }}>{lesson}</button>)}</div></div>}</section>
+      <section className="data-card"><div className="card-title"><div><h2>{showSessionHistory ? 'Session History' : `${resource.label} table`}</h2><span>{records.length} loaded record{records.length === 1 ? '' : 's'}</span></div><div className="table-actions"><button className="secondary compact" onClick={exportCsv} disabled={loading} title={`Export ${resource.label} CSV`}><Download size={16} /></button><button className="secondary compact" onClick={() => readRecords(resource, showSessionHistory)} disabled={loading} title={`Refresh ${resource.label}`}><RefreshCw size={16} /></button></div></div>{records.length === 0 ? <div className="empty-state"><Package size={25} /><p>No records loaded yet.</p><button className="text-button" onClick={() => readRecords(resource, showSessionHistory)}>Read {resource.label.toLowerCase()}</button></div> : <div className="table-wrap"><table><thead><tr>{resource.columns.map((column) => <th key={column}>{resource.columnLabels[column]}</th>)}</tr></thead><tbody>{records.map((record) => <tr key={record.id}>{resource.columns.map((column) => <td key={column}>{formatCell(record, column)}</td>)}</tr>)}</tbody></table></div>}{resource.id === 'lessons' && method === 'GET' && <div className="lesson-catalog"><div><h3>Add curriculum lessons</h3><p>These presets open the Create Lesson form with the course details ready.</p></div><div className="lesson-presets">{lessonPresets.map((lesson) => <button type="button" key={lesson} onClick={() => { selectAction(resource, 'POST'); selectLessonPreset(lesson) }}>{lesson}</button>)}</div></div>}{showSessionHistory && <div className="session-history"><div><h3>All sessions</h3><p>Filter by student, teacher, lesson, or date.</p></div><div className="session-filter-fields"><label>Student ID<input value={sessionFilters.studentId} inputMode="numeric" onChange={(event) => setSessionFilters({ ...sessionFilters, studentId: event.target.value })} /></label><label>Teacher ID<input value={sessionFilters.teacherId} inputMode="numeric" onChange={(event) => setSessionFilters({ ...sessionFilters, teacherId: event.target.value })} /></label><label>Lesson ID<input value={sessionFilters.lessonId} inputMode="numeric" onChange={(event) => setSessionFilters({ ...sessionFilters, lessonId: event.target.value })} /></label><label>Date<input value={sessionFilters.sessionDate} type="date" onChange={(event) => setSessionFilters({ ...sessionFilters, sessionDate: event.target.value })} /></label><button className="secondary" type="button" onClick={() => readRecords(resource, true)} disabled={loading}>Apply</button><button className="text-button" type="button" onClick={() => { setSessionFilters({ studentId: '', teacherId: '', lessonId: '', sessionDate: '' }); void readRecords(resource) }} disabled={loading}>Clear</button></div></div>}</section>
       <div className="work-grid"><section className="data-card request-card"><div className="card-title"><div><h2>{action.label} {resource.label}</h2><span>Send a {method} request</span></div><span className={`method-badge ${method.toLowerCase()}`}>{method}</span></div><form onSubmit={submitAction}><label className="endpoint"><span>Endpoint</span><input className="endpoint-input" value={endpointPath} onChange={(event) => setEndpointPath(event.target.value)} aria-label="Endpoint path" /></label>{resource.id === 'service-tickets' && <p className="session-note">Each 1:1 session is one unified record that directly stores the Student ID, Teacher ID, Lesson ID, session date, and what they worked on.</p>}{requiresRecordId && <label className="record-id">{resource.singularLabel} ID<input value={recordId} inputMode="numeric" placeholder="e.g. 1" onChange={(event) => setRecordId(event.target.value)} required /></label>}{method !== 'DELETE' && <label className="json-label">Request JSON<textarea value={body} onChange={(event) => setBody(event.target.value)} spellCheck="false" /></label>}{error && <p className="form-error">{error}</p>}<button className="primary" disabled={loading || (method !== 'GET' && !isAdmin)}>{method === 'GET' ? <RefreshCw size={17} /> : <Save size={17} />}{method === 'GET' ? `Read ${resource.label}` : !isAdmin ? 'Administrator access required' : `${action.label} ${resource.singularLabel}`}</button></form></section>
         <section className="data-card response-card"><div className="card-title"><div><h2>API activity</h2><span>Request and response proof</span></div>{activity && <span className={activity.status < 400 ? 'status ok' : 'status fail'}>{activity.status}</span>}</div>{activity ? <><div className="request-line"><span className="method">{activity.method}</span><code>{activity.path}</code></div>{activity.requestBody !== undefined && <pre className="request-json">{pretty(activity.requestBody)}</pre>}<pre>{pretty(activity.data)}</pre></> : <div className="empty-state"><ClipboardList size={25} /><p>Choose a CRUD action to inspect its live API response.</p></div>}</section>
       </div></main>

@@ -3,34 +3,34 @@ from marshmallow import ValidationError
 
 from app.extensions import db
 from app.csv_export import csv_response
-from app.models import Mechanic
+from app.models import Teacher
 from app.utils.util import roles_required, token_required
 
 from . import mechanics_bp
-from .schemas import mechanic_schema, mechanics_schema
+from .schemas import teacher_schema, teachers_schema
 
 
 @mechanics_bp.route("/", methods=["POST"])
 @roles_required("admin")
 def create_mechanic():
     try:
-        mechanic_data = mechanic_schema.load(request.json)
+        mechanic_data = teacher_schema.load(request.json)
     except ValidationError as error:
         return jsonify(error.messages), 400
 
-    mechanic = Mechanic(**mechanic_data)
+    mechanic = Teacher(**mechanic_data)
     db.session.add(mechanic)
     db.session.commit()
-    return mechanic_schema.jsonify(mechanic), 201
+    return teacher_schema.jsonify(mechanic), 201
 
 
 @mechanics_bp.route("/", methods=["GET"])
 @token_required
 def get_mechanics():
-    query = db.select(Mechanic)
+    query = db.select(Teacher)
     search = request.args.get("search", "", type=str)
     if search:
-        query = query.where(Mechanic.name.ilike(f"%{search}%"))
+        query = query.where(Teacher.name.ilike(f"%{search}%"))
 
     mechanics = db.session.execute(query).scalars().all()
     sort_mode = request.args.get("sort", "")
@@ -46,13 +46,13 @@ def get_mechanics():
     elif offset:
         mechanics = mechanics[offset:]
 
-    return mechanics_schema.jsonify(mechanics), 200
+    return teachers_schema.jsonify(mechanics), 200
 
 
 @mechanics_bp.route("/export.csv", methods=["GET"])
 @token_required
 def export_mechanics():
-    mechanics = db.session.execute(db.select(Mechanic).order_by(Mechanic.id)).scalars().all()
+    mechanics = db.session.execute(db.select(Teacher).order_by(Teacher.id)).scalars().all()
     rows = [
         {
             "id": mechanic.id,
@@ -69,22 +69,22 @@ def export_mechanics():
 @mechanics_bp.route("/<int:mechanic_id>", methods=["GET"])
 @token_required
 def get_mechanic(mechanic_id):
-    mechanic = db.session.get(Mechanic, mechanic_id)
+    mechanic = db.session.get(Teacher, mechanic_id)
     if not mechanic:
-        return jsonify({"error": "Mechanic not found"}), 404
+        return jsonify({"error": "Teacher not found"}), 404
 
-    return mechanic_schema.jsonify(mechanic), 200
+    return teacher_schema.jsonify(mechanic), 200
 
 
 @mechanics_bp.route("/<int:mechanic_id>", methods=["PUT"])
 @roles_required("admin")
 def update_mechanic(mechanic_id):
-    mechanic = db.session.get(Mechanic, mechanic_id)
+    mechanic = db.session.get(Teacher, mechanic_id)
     if not mechanic:
-        return jsonify({"error": "Mechanic not found"}), 404
+        return jsonify({"error": "Teacher not found"}), 404
 
     try:
-        mechanic_data = mechanic_schema.load(request.json, partial=True)
+        mechanic_data = teacher_schema.load(request.json, partial=True)
     except ValidationError as error:
         return jsonify(error.messages), 400
 
@@ -92,20 +92,20 @@ def update_mechanic(mechanic_id):
         setattr(mechanic, key, value)
 
     db.session.commit()
-    return mechanic_schema.jsonify(mechanic), 200
+    return teacher_schema.jsonify(mechanic), 200
 
 
 @mechanics_bp.route("/<int:mechanic_id>", methods=["DELETE"])
 @roles_required("admin")
 def delete_mechanic(mechanic_id):
-    mechanic = db.session.get(Mechanic, mechanic_id)
+    mechanic = db.session.get(Teacher, mechanic_id)
     if not mechanic:
-        return jsonify({"error": "Mechanic not found"}), 404
+        return jsonify({"error": "Teacher not found"}), 404
     if mechanic.sessions:
         return jsonify({"error": "Teacher has 1:1 sessions and cannot be deleted"}), 409
     if mechanic.user:
-        return jsonify({"error": "Mechanic has a user account and cannot be deleted"}), 409
+        return jsonify({"error": "Teacher has a user account and cannot be deleted"}), 409
 
     db.session.delete(mechanic)
     db.session.commit()
-    return jsonify({"message": f"Mechanic id: {mechanic_id}, successfully deleted."}), 200
+    return jsonify({"message": f"Teacher id: {mechanic_id}, successfully deleted."}), 200

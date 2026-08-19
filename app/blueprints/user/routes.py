@@ -4,9 +4,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from app.blueprints.customer.schemas import customer_schema
+from app.blueprints.customer.schemas import student_schema
 from app.extensions import db, limiter
-from app.models import Customer, User
+from app.models import Student, User
 from app.utils.util import encode_token, token_required
 
 from . import user_bp
@@ -34,14 +34,14 @@ def register():
     existing_user = db.session.execute(
         select(User).where(User.email == normalized_email)
     ).scalar_one_or_none()
-    existing_customer = db.session.execute(
-        select(Customer).where(Customer.email == normalized_email)
+    existing_student = db.session.execute(
+        select(Student).where(Student.email == normalized_email)
     ).scalar_one_or_none()
-    if existing_user or existing_customer:
+    if existing_user or existing_student:
         return jsonify({"error": "Email already registered"}), 409
 
     try:
-        customer_data = customer_schema.load(
+        student_data = student_schema.load(
             {
                 "name": payload.get("name"),
                 "email": normalized_email,
@@ -51,12 +51,12 @@ def register():
     except ValidationError as error:
         return jsonify(error.messages), 400
 
-    customer = Customer(**customer_data)
+    student = Student(**student_data)
     user = User(
         email=normalized_email,
         password_hash=generate_password_hash(password),
-        role="customer",
-        customer=customer,
+        role="student",
+        student=student,
     )
     db.session.add(user)
     try:

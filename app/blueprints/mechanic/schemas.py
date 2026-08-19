@@ -1,13 +1,13 @@
 from app.extensions import ma
-from app.models import Mechanic
+from app.models import Teacher
 
 
-class MechanicSchema(ma.SQLAlchemyAutoSchema):
+class TeacherSchema(ma.SQLAlchemyAutoSchema):
     id = ma.auto_field(dump_only=True)
 
     class Meta:
-        model = Mechanic
+        model = Teacher
 
 
-mechanic_schema = MechanicSchema()
-mechanics_schema = MechanicSchema(many=True)
+teacher_schema = TeacherSchema()
+teachers_schema = TeacherSchema(many=True)

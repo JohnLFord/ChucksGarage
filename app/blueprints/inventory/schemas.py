@@ -1,13 +1,13 @@
 from app.extensions import ma
-from app.models import Part
+from app.models import Lesson
 
 
-class PartSchema(ma.SQLAlchemyAutoSchema):
+class LessonSchema(ma.SQLAlchemyAutoSchema):
     id = ma.auto_field(dump_only=True)
 
     class Meta:
-        model = Part
+        model = Lesson
 
 
-part_schema = PartSchema()
-parts_schema = PartSchema(many=True)
+lesson_schema = LessonSchema()
+lessons_schema = LessonSchema(many=True)

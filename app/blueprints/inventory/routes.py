@@ -5,45 +5,45 @@ from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.csv_export import csv_response
-from app.models import Part
+from app.models import Lesson
 from app.utils.util import roles_required, token_required
 
 from . import inventory_bp
-from .schemas import part_schema, parts_schema
+from .schemas import lesson_schema, lessons_schema
 
 
 @inventory_bp.route("/", methods=["POST"])
 @roles_required("admin")
 def create_part():
     try:
-        part_data = part_schema.load(request.json)
+        lesson_data = lesson_schema.load(request.json)
     except ValidationError as error:
         return jsonify(error.messages), 400
 
-    query = select(Part).where(Part.sku == part_data["sku"])
-    existing_part = db.session.execute(query).scalar_one_or_none()
-    if existing_part:
-        return jsonify({"error": "SKU already exists"}), 400
+    query = select(Lesson).where(Lesson.sku == lesson_data["sku"])
+    existing_lesson = db.session.execute(query).scalar_one_or_none()
+    if existing_lesson:
+        return jsonify({"error": "Course code already exists"}), 400
 
-    new_part = Part(**part_data)
-    db.session.add(new_part)
+    new_lesson = Lesson(**lesson_data)
+    db.session.add(new_lesson)
     db.session.commit()
-    return part_schema.jsonify(new_part), 201
+    return lesson_schema.jsonify(new_lesson), 201
 
 
 @inventory_bp.route("/", methods=["GET"])
 @token_required
 def get_parts():
-    query = select(Part)
+    query = select(Lesson)
     search = request.args.get("search", "", type=str)
     if search:
-        query = query.where(Part.name.ilike(f"%{search}%"))
+        query = query.where(Lesson.name.ilike(f"%{search}%"))
 
     sort = request.args.get("sort", "")
     if sort == "name":
-        query = query.order_by(Part.name)
+        query = query.order_by(Lesson.name)
     elif sort == "stock":
-        query = query.order_by(Part.stock_quantity)
+        query = query.order_by(Lesson.stock_quantity)
 
     offset = request.args.get("offset", 0, type=int)
     if offset:
@@ -53,17 +53,17 @@ def get_parts():
     if limit is not None:
         query = query.limit(limit)
 
-    parts = db.session.execute(query).scalars().all()
-    return parts_schema.jsonify(parts), 200
+    lessons = db.session.execute(query).scalars().all()
+    return lessons_schema.jsonify(lessons), 200
 
 
 @inventory_bp.route("/export.csv", methods=["GET"])
 @token_required
 def export_parts():
-    parts = db.session.execute(select(Part).order_by(Part.id)).scalars().all()
+    lessons = db.session.execute(select(Lesson).order_by(Lesson.id)).scalars().all()
     rows = [
         {"id": part.id, "name": part.name, "sku": part.sku, "stock_quantity": part.stock_quantity}
-        for part in parts
+        for part in lessons
     ]
     return csv_response("lessons.csv", rows, ["id", "name", "sku", "stock_quantity"])
 
@@ -71,22 +71,23 @@ def export_parts():
 @inventory_bp.route("/<int:part_id>", methods=["GET"])
 @token_required
 def get_part(part_id):
-    part = db.session.get(Part, part_id)
+    part = db.session.get(Lesson, part_id)
     if not part:
-        return jsonify({"error": "Part not found"}), 404
+        return jsonify({"error": "Lesson not found"}), 404
 
-    return part_schema.jsonify(part), 200
+    return lesson_schema.jsonify(part), 200
 
 
 @inventory_bp.route("/<int:part_id>", methods=["PUT"])
-@roles_required("admin", "mechanic")
+@roles_required("admin", "teacher")
+@roles_required("admin", "teacher")
 def update_part(part_id):
-    part = db.session.get(Part, part_id)
+    part = db.session.get(Lesson, part_id)
     if not part:
-        return jsonify({"error": "Part not found"}), 404
+        return jsonify({"error": "Lesson not found"}), 404
 
     try:
-        part_data = part_schema.load(request.json, partial=True)
+        part_data = lesson_schema.load(request.json, partial=True)
     except ValidationError as error:
         return jsonify(error.messages), 400
 
@@ -97,17 +98,17 @@ def update_part(part_id):
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "SKU already exists"}), 400
+        return jsonify({"error": "Course code already exists"}), 400
 
-    return part_schema.jsonify(part), 200
+    return lesson_schema.jsonify(part), 200
 
 
 @inventory_bp.route("/<int:part_id>", methods=["DELETE"])
 @roles_required("admin")
 def delete_part(part_id):
-    part = db.session.get(Part, part_id)
+    part = db.session.get(Lesson, part_id)
     if not part:
-        return jsonify({"error": "Part not found"}), 404
+        return jsonify({"error": "Lesson not found"}), 404
 
     if part.sessions:
         return jsonify(
@@ -116,4 +117,4 @@ def delete_part(part_id):
 
     db.session.delete(part)
     db.session.commit()
-    return jsonify({"message": f"Part id: {part_id}, successfully deleted."}), 200
+    return jsonify({"message": f"Lesson id: {part_id}, successfully deleted."}), 200

@@ -1,16 +1,11 @@
 swagger: "2.0"
 info:
   title: "CodingLab API"
-  description: "API for customers, mechanics, service tickets, inventory, and authentication."
-  version: "1.0.0"
-host: "chucksgarage.onrender.com"
-schemes:
-  - "https"
-consumes:
-  - "application/json"
-produces:
-  - "application/json"
+  description: "Authenticated API for students, teachers, lessons, sessions, and user accounts."
+  version: "2.0.0"
 basePath: "/"
+consumes: ["application/json"]
+produces: ["application/json"]
 securityDefinitions:
   Bearer:
     type: apiKey
@@ -19,736 +14,297 @@ securityDefinitions:
 paths:
   /users/register:
     post:
-      tags:
-        - Users
-      summary: "Register a customer user"
-      description: "Create a new user account for a customer."
-      parameters:
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: "#/definitions/RegisterRequest"
+      tags: [Users]
+      summary: "Register a student account"
+      parameters: [{$ref: "#/parameters/RegisterBody"}]
       responses:
-        201:
-          description: "User created"
-          schema:
-            $ref: "#/definitions/User"
-        409:
-          description: "Duplicate user"
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-
+        201: {description: "Student account created", schema: {$ref: "#/definitions/User"}}
+        400: {description: "Invalid request", schema: {$ref: "#/definitions/Error"}}
+        409: {description: "Email already registered", schema: {$ref: "#/definitions/Error"}}
   /users/login:
     post:
-      tags:
-        - Users
-      summary: "Login and receive auth token"
-      description: "Authenticate a user using email and password."
-      parameters:
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: "#/definitions/LoginRequest"
+      tags: [Users]
+      summary: "Log in and receive an access token"
+      parameters: [{$ref: "#/parameters/LoginBody"}]
       responses:
-        200:
-          description: "Login successful"
-          schema:
-            $ref: "#/definitions/LoginResponse"
-        401:
-          description: "Unauthorized"
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-
+        200: {description: "Login successful", schema: {$ref: "#/definitions/LoginResponse"}}
+        401: {description: "Invalid email or password", schema: {$ref: "#/definitions/Error"}}
   /users/me:
     get:
-      tags:
-        - Users
-      summary: "Get current user profile"
-      description: "Returns the authenticated user profile."
-      security:
-        - Bearer: []
+      tags: [Users]
+      summary: "Get the current user"
+      security: [{Bearer: []}]
       responses:
-        200:
-          description: "Authenticated user"
-          schema:
-            $ref: "#/definitions/User"
-        401:
-          description: "Missing or invalid token"
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-
+        200: {description: "Current user", schema: {$ref: "#/definitions/User"}}
   /students:
     get:
-      tags:
-        - Customers
-      summary: "List customers"
-      description: "Fetch all customer records. Requires authentication."
-      security:
-        - Bearer: []
-      responses:
-        200:
-          description: "Customer list"
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/Customer"
+      tags: [Students]
+      summary: "List students"
+      security: [{Bearer: []}]
+      responses: {200: {description: "Students", schema: {type: array, items: {$ref: "#/definitions/Student"}}}}
     post:
-      tags:
-        - Customers
-      summary: "Create customer"
-      description: "Create a new customer. Requires admin permissions."
-      security:
-        - Bearer: []
-      parameters:
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: "#/definitions/CustomerInput"
-      responses:
-        201:
-          description: "Customer created"
-          schema:
-            $ref: "#/definitions/Customer"
-
-  /students/{customer_id}:
+      tags: [Students]
+      summary: "Create a student"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/StudentBody"}]
+      responses: {201: {description: "Student created", schema: {$ref: "#/definitions/Student"}}}
+  /students/export.csv:
     get:
-      tags:
-        - Customers
-      summary: "Get customer by ID"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: customer_id
-          required: true
-          type: integer
-      responses:
-        200:
-          description: "Customer found"
-          schema:
-            $ref: "#/definitions/Customer"
+      tags: [Students]
+      summary: "Export students as CSV"
+      security: [{Bearer: []}]
+      produces: ["text/csv"]
+      responses: {200: {description: "CSV export"}}
+  /students/{student_id}:
+    get:
+      tags: [Students]
+      summary: "Get a student"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/StudentId"}]
+      responses: {200: {description: "Student", schema: {$ref: "#/definitions/Student"}}}
     put:
-      tags:
-        - Customers
-      summary: "Update customer"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: customer_id
-          required: true
-          type: integer
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: "#/definitions/CustomerInput"
-      responses:
-        200:
-          description: "Customer updated"
-          schema:
-            $ref: "#/definitions/Customer"
+      tags: [Students]
+      summary: "Update a student"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/StudentId"}, {$ref: "#/parameters/StudentBody"}]
+      responses: {200: {description: "Updated student", schema: {$ref: "#/definitions/Student"}}}
     delete:
-      tags:
-        - Customers
-      summary: "Delete customer"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: customer_id
-          required: true
-          type: integer
-      responses:
-        200:
-          description: "Customer deleted"
-
+      tags: [Students]
+      summary: "Delete a student"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/StudentId"}]
+      responses: {200: {description: "Student deleted"}}
   /teachers:
     get:
-      tags:
-        - Mechanics
-      summary: "List mechanics"
-      security:
-        - Bearer: []
-      responses:
-        200:
-          description: "Mechanic list"
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/Mechanic"
+      tags: [Teachers]
+      summary: "List teachers"
+      security: [{Bearer: []}]
+      responses: {200: {description: "Teachers", schema: {type: array, items: {$ref: "#/definitions/Teacher"}}}}
     post:
-      tags:
-        - Mechanics
-      summary: "Create mechanic"
-      security:
-        - Bearer: []
-      parameters:
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: "#/definitions/MechanicInput"
-      responses:
-        201:
-          description: "Mechanic created"
-          schema:
-            $ref: "#/definitions/Mechanic"
-
-  /teachers/{mechanic_id}:
+      tags: [Teachers]
+      summary: "Create a teacher"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/TeacherBody"}]
+      responses: {201: {description: "Teacher created", schema: {$ref: "#/definitions/Teacher"}}}
+  /teachers/export.csv:
     get:
-      tags:
-        - Mechanics
-      summary: "Get mechanic by ID"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: mechanic_id
-          required: true
-          type: integer
-      responses:
-        200:
-          description: "Mechanic found"
-          schema:
-            $ref: "#/definitions/Mechanic"
+      tags: [Teachers]
+      summary: "Export teachers as CSV"
+      security: [{Bearer: []}]
+      produces: ["text/csv"]
+      responses: {200: {description: "CSV export"}}
+  /teachers/{teacher_id}:
+    get:
+      tags: [Teachers]
+      summary: "Get a teacher"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/TeacherId"}]
+      responses: {200: {description: "Teacher", schema: {$ref: "#/definitions/Teacher"}}}
     put:
-      tags:
-        - Mechanics
-      summary: "Update mechanic"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: mechanic_id
-          required: true
-          type: integer
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: "#/definitions/MechanicInput"
-      responses:
-        200:
-          description: "Mechanic updated"
-          schema:
-            $ref: "#/definitions/Mechanic"
+      tags: [Teachers]
+      summary: "Update a teacher"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/TeacherId"}, {$ref: "#/parameters/TeacherBody"}]
+      responses: {200: {description: "Updated teacher", schema: {$ref: "#/definitions/Teacher"}}}
     delete:
-      tags:
-        - Mechanics
-      summary: "Delete mechanic"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: mechanic_id
-          required: true
-          type: integer
-      responses:
-        200:
-          description: "Mechanic deleted"
-
-  /sessions:
-    get:
-      tags:
-        - Service Tickets
-      summary: "List service tickets"
-      security:
-        - Bearer: []
-      responses:
-        200:
-          description: "Service ticket list"
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/ServiceTicket"
-    post:
-      tags:
-        - Service Tickets
-      summary: "Create service ticket"
-      security:
-        - Bearer: []
-      parameters:
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: "#/definitions/ServiceTicketInput"
-      responses:
-        201:
-          description: "Service ticket created"
-          schema:
-            $ref: "#/definitions/ServiceTicket"
-
-  /sessions/{service_ticket_id}:
-    get:
-      tags:
-        - Service Tickets
-      summary: "Get service ticket by ID"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: service_ticket_id
-          required: true
-          type: integer
-      responses:
-        200:
-          description: "Ticket found"
-          schema:
-            $ref: "#/definitions/ServiceTicket"
-    put:
-      tags:
-        - Service Tickets
-      summary: "Update service ticket"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: service_ticket_id
-          required: true
-          type: integer
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: "#/definitions/ServiceTicketInput"
-      responses:
-        200:
-          description: "Ticket updated"
-          schema:
-            $ref: "#/definitions/ServiceTicket"
-    delete:
-      tags:
-        - Service Tickets
-      summary: "Delete service ticket"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: service_ticket_id
-          required: true
-          type: integer
-      responses:
-        200:
-          description: "Ticket deleted"
-
-  /sessions/{service_ticket_id}/teachers/{mechanic_id}:
-    post:
-      tags:
-        - Service Tickets
-      summary: "Assign mechanic to service ticket"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: service_ticket_id
-          required: true
-          type: integer
-        - in: path
-          name: mechanic_id
-          required: true
-          type: integer
-      responses:
-        201:
-          description: "Mechanic assigned"
-
-  /sessions/{service_ticket_id}/edit:
-    put:
-      tags:
-        - Service Tickets
-      summary: "Bulk edit assigned mechanics"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: service_ticket_id
-          required: true
-          type: integer
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: "#/definitions/MechanicEditRequest"
-      responses:
-        200:
-          description: "Mechanics updated"
-          schema:
-            $ref: "#/definitions/ServiceTicket"
-
-  /sessions/{service_ticket_id}/parts:
-    post:
-      tags:
-        - Service Tickets
-      summary: "Add part order to service ticket"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: service_ticket_id
-          required: true
-          type: integer
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: "#/definitions/PartOrderInput"
-      responses:
-        201:
-          description: "Part order added"
-    get:
-      tags:
-        - Service Tickets
-      summary: "Get all part orders for ticket"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: service_ticket_id
-          required: true
-          type: integer
-      responses:
-        200:
-          description: "Part orders"
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/PartOrder"
-
-  /sessions/parts/popular:
-    get:
-      tags:
-        - Service Tickets
-      summary: "Get most-used parts"
-      security:
-        - Bearer: []
-      responses:
-        200:
-          description: "Popular parts list"
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/PopularPart"
-
+      tags: [Teachers]
+      summary: "Delete a teacher"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/TeacherId"}]
+      responses: {200: {description: "Teacher deleted"}}
   /lessons:
     get:
-      tags:
-        - Inventory
-      summary: "List inventory parts"
-      security:
-        - Bearer: []
-      responses:
-        200:
-          description: "Inventory list"
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/Part"
+      tags: [Lessons]
+      summary: "List lessons"
+      security: [{Bearer: []}]
+      responses: {200: {description: "Lessons", schema: {type: array, items: {$ref: "#/definitions/Lesson"}}}}
     post:
-      tags:
-        - Inventory
-      summary: "Create part"
-      security:
-        - Bearer: []
-      parameters:
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: "#/definitions/PartInput"
-      responses:
-        201:
-          description: "Part created"
-          schema:
-            $ref: "#/definitions/Part"
-
-  /lessons/{part_id}:
+      tags: [Lessons]
+      summary: "Create a lesson"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/LessonBody"}]
+      responses: {201: {description: "Lesson created", schema: {$ref: "#/definitions/Lesson"}}}
+  /lessons/export.csv:
     get:
-      tags:
-        - Inventory
-      summary: "Get part by ID"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: part_id
-          required: true
-          type: integer
-      responses:
-        200:
-          description: "Part found"
-          schema:
-            $ref: "#/definitions/Part"
+      tags: [Lessons]
+      summary: "Export lessons as CSV"
+      security: [{Bearer: []}]
+      produces: ["text/csv"]
+      responses: {200: {description: "CSV export"}}
+  /lessons/{lesson_id}:
+    get:
+      tags: [Lessons]
+      summary: "Get a lesson"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/LessonId"}]
+      responses: {200: {description: "Lesson", schema: {$ref: "#/definitions/Lesson"}}}
     put:
-      tags:
-        - Inventory
-      summary: "Update part"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: part_id
-          required: true
-          type: integer
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: "#/definitions/PartInput"
-      responses:
-        200:
-          description: "Part updated"
-          schema:
-            $ref: "#/definitions/Part"
+      tags: [Lessons]
+      summary: "Update a lesson"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/LessonId"}, {$ref: "#/parameters/LessonBody"}]
+      responses: {200: {description: "Updated lesson", schema: {$ref: "#/definitions/Lesson"}}}
     delete:
-      tags:
-        - Inventory
-      summary: "Delete part"
-      security:
-        - Bearer: []
-      parameters:
-        - in: path
-          name: part_id
-          required: true
-          type: integer
-      responses:
-        200:
-          description: "Part deleted"
-
+      tags: [Lessons]
+      summary: "Delete a lesson"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/LessonId"}]
+      responses: {200: {description: "Lesson deleted"}}
+  /sessions:
+    get:
+      tags: [Sessions]
+      summary: "List sessions visible to the current user"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/SessionStudentId"}, {$ref: "#/parameters/SessionTeacherId"}, {$ref: "#/parameters/SessionLessonId"}, {$ref: "#/parameters/SessionDate"}]
+      responses: {200: {description: "Sessions", schema: {type: array, items: {$ref: "#/definitions/Session"}}}}
+    post:
+      tags: [Sessions]
+      summary: "Create a session"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/SessionBody"}]
+      responses: {201: {description: "Session created", schema: {$ref: "#/definitions/Session"}}}
+  /sessions/export.csv:
+    get:
+      tags: [Sessions]
+      summary: "Export sessions as CSV"
+      security: [{Bearer: []}]
+      produces: ["text/csv"]
+      responses: {200: {description: "CSV export"}}
+  /sessions/{session_id}:
+    get:
+      tags: [Sessions]
+      summary: "Get a session"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/SessionId"}]
+      responses: {200: {description: "Session", schema: {$ref: "#/definitions/Session"}}}
+    put:
+      tags: [Sessions]
+      summary: "Update a session"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/SessionId"}, {$ref: "#/parameters/SessionBody"}]
+      responses: {200: {description: "Updated session", schema: {$ref: "#/definitions/Session"}}}
+    delete:
+      tags: [Sessions]
+      summary: "Delete a session"
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/SessionId"}]
+      responses: {200: {description: "Session deleted"}}
+parameters:
+  StudentId: {name: student_id, in: path, required: true, type: integer}
+  TeacherId: {name: teacher_id, in: path, required: true, type: integer}
+  LessonId: {name: lesson_id, in: path, required: true, type: integer}
+  SessionId: {name: session_id, in: path, required: true, type: integer}
+  SessionStudentId: {name: student_id, in: query, type: integer, description: "Admin-only filter by student ID"}
+  SessionTeacherId: {name: teacher_id, in: query, type: integer, description: "Admin-only filter by teacher ID"}
+  SessionLessonId: {name: lesson_id, in: query, type: integer, description: "Admin-only filter by lesson ID"}
+  SessionDate: {name: session_date, in: query, type: string, format: date, description: "Admin-only filter by session date"}
+  RegisterBody: {name: body, in: body, required: true, schema: {$ref: "#/definitions/RegisterRequest"}}
+  LoginBody: {name: body, in: body, required: true, schema: {$ref: "#/definitions/LoginRequest"}}
+  StudentBody: {name: body, in: body, required: true, schema: {$ref: "#/definitions/StudentInput"}}
+  TeacherBody: {name: body, in: body, required: true, schema: {$ref: "#/definitions/TeacherInput"}}
+  LessonBody: {name: body, in: body, required: true, schema: {$ref: "#/definitions/LessonInput"}}
+  SessionBody: {name: body, in: body, required: true, schema: {$ref: "#/definitions/SessionInput"}}
 definitions:
-  ErrorResponse:
-    type: object
-    properties:
-      error:
-        type: string
-      details:
-        type: string
-
   RegisterRequest:
     type: object
-    required:
-      - email
-      - password
-      - name
-      - date_of_birth
+    required: [name, email, password, date_of_birth]
     properties:
-      email:
-        type: string
-      password:
-        type: string
-      name:
-        type: string
-      date_of_birth:
-        type: string
-        format: date
-
+      name: {type: string}
+      email: {type: string, format: email}
+      password: {type: string, minLength: 8}
+      date_of_birth: {type: string, format: date}
   LoginRequest:
     type: object
-    required:
-      - email
-      - password
+    required: [email, password]
     properties:
-      email:
-        type: string
-      password:
-        type: string
-
+      email: {type: string, format: email}
+      password: {type: string}
   LoginResponse:
     type: object
-    properties:
-      auth_token:
-        type: string
-      message:
-        type: string
-
+    properties: {auth_token: {type: string}}
   User:
     type: object
     properties:
-      id:
-        type: integer
-      email:
-        type: string
-      role:
-        type: string
-      name:
-        type: string
-      customer_id:
-        type: integer
-      mechanic_id:
-        type: integer
-
-  Customer:
+      id: {type: integer}
+      email: {type: string, format: email}
+      role: {type: string, enum: [admin, student, teacher]}
+      student_id: {type: integer, x-nullable: true}
+      teacher_id: {type: integer, x-nullable: true}
+  StudentInput:
+    type: object
+    required: [name, email, date_of_birth]
+    properties:
+      name: {type: string}
+      email: {type: string, format: email}
+      date_of_birth: {type: string, format: date}
+  Student:
+    allOf:
+      - $ref: "#/definitions/StudentInput"
+      - type: object
+        properties: {id: {type: integer}}
+  TeacherInput:
+    type: object
+    required: [name, specialty, experience, certification]
+    properties:
+      name: {type: string}
+      specialty: {type: string}
+      experience: {type: string}
+      certification: {type: string}
+  Teacher:
+    allOf:
+      - $ref: "#/definitions/TeacherInput"
+      - type: object
+        properties: {id: {type: integer}}
+  LessonInput:
+    type: object
+    required: [name, sku, stock_quantity]
+    properties:
+      name: {type: string}
+      sku: {type: string}
+      stock_quantity: {type: integer, minimum: 0}
+  Lesson:
+    allOf:
+      - $ref: "#/definitions/LessonInput"
+      - type: object
+        properties: {id: {type: integer}}
+  SessionInput:
+    type: object
+    required: [session_date, student_id, teacher_id, lesson_id]
+    properties:
+      session_date: {type: string, format: date}
+      student_id: {type: integer}
+      teacher_id: {type: integer}
+      lesson_id: {type: integer}
+      notes: {type: string}
+  Session:
+    allOf:
+      - $ref: "#/definitions/SessionInput"
+      - type: object
+        properties:
+          id: {type: integer}
+          student: {$ref: "#/definitions/StudentSummary"}
+          teacher: {$ref: "#/definitions/TeacherSummary"}
+          lesson: {$ref: "#/definitions/LessonSummary"}
+  StudentSummary:
     type: object
     properties:
-      id:
-        type: integer
-      name:
-        type: string
-      email:
-        type: string
-      date_of_birth:
-        type: string
-        format: date
-
-  CustomerInput:
-    type: object
-    required:
-      - name
-      - email
-      - date_of_birth
-    properties:
-      name:
-        type: string
-      email:
-        type: string
-      date_of_birth:
-        type: string
-        format: date
-
-  Mechanic:
+      id: {type: integer}
+      name: {type: string}
+      email: {type: string, format: email}
+  TeacherSummary:
     type: object
     properties:
-      id:
-        type: integer
-      name:
-        type: string
-      specialty:
-        type: string
-      experience:
-        type: string
-      certification:
-        type: string
-
-  MechanicInput:
-    type: object
-    required:
-      - name
-      - specialty
-      - experience
-      - certification
-    properties:
-      name:
-        type: string
-      specialty:
-        type: string
-      experience:
-        type: string
-      certification:
-        type: string
-
-  ServiceTicket:
+      id: {type: integer}
+      name: {type: string}
+      specialty: {type: string}
+  LessonSummary:
     type: object
     properties:
-      id:
-        type: integer
-      repair_date:
-        type: string
-        format: date
-      customer_id:
-        type: integer
-      mechanics:
-        type: array
-        items:
-          $ref: "#/definitions/Mechanic"
-      part_orders:
-        type: array
-        items:
-          $ref: "#/definitions/PartOrder"
-
-  ServiceTicketInput:
-    type: object
-    required:
-      - repair_date
-      - customer_id
-    properties:
-      repair_date:
-        type: string
-        format: date
-      customer_id:
-        type: integer
-
-  MechanicEditRequest:
+      id: {type: integer}
+      name: {type: string}
+      sku: {type: string}
+  Error:
     type: object
     properties:
-      add_ids:
-        type: array
-        items:
-          type: integer
-      remove_ids:
-        type: array
-        items:
-          type: integer
-
-  Part:
-    type: object
-    properties:
-      id:
-        type: integer
-      name:
-        type: string
-      sku:
-        type: string
-      stock_quantity:
-        type: integer
-
-  PartInput:
-    type: object
-    required:
-      - name
-      - sku
-      - stock_quantity
-    properties:
-      name:
-        type: string
-      sku:
-        type: string
-      stock_quantity:
-        type: integer
-
-  PartOrderInput:
-    type: object
-    required:
-      - part_id
-      - quantity
-      - unit_cost
-    properties:
-      part_id:
-        type: integer
-      quantity:
-        type: integer
-      unit_cost:
-        type: number
-
-  PartOrder:
-    type: object
-    properties:
-      id:
-        type: integer
-      part_id:
-        type: integer
-      service_ticket_id:
-        type: integer
-      quantity:
-        type: integer
-      unit_cost:
-        type: number
-      part:
-        $ref: "#/definitions/Part"
-
-  PopularPart:
-    type: object
-    properties:
-      id:
-        type: integer
-      name:
-        type: string
-      sku:
-        type: string
-      stock_quantity:
-        type: integer
-      total_used:
-        type: integer
-
+      error: {type: string}
+      details: {type: string}
