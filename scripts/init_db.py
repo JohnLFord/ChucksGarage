@@ -51,14 +51,15 @@ with app.app_context():
         for name, sku in LESSONS
         if sku not in existing_skus
     )
-    administrators = {
-        administrator["email"]: administrator["password_hash"]
-        for administrator in existing_admins
-    }
     admin_email = os.getenv("BOOTSTRAP_ADMIN_EMAIL", "").strip().lower()
     admin_password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD", "")
     if admin_email and admin_password:
-        administrators[admin_email] = generate_password_hash(admin_password)
+        administrators = {admin_email: generate_password_hash(admin_password)}
+    else:
+        administrators = {
+            administrator["email"]: administrator["password_hash"]
+            for administrator in existing_admins
+        }
     db.session.add_all(
         User(email=email, password_hash=password_hash, role="admin")
         for email, password_hash in administrators.items()
