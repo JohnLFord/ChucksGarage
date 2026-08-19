@@ -1,1 +1,1 @@
-"""Blueprint package for the Chucks Garage API."""
+"""Blueprint package for the Coding Garage API."""

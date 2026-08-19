@@ -1,6 +1,6 @@
 swagger: "2.0"
 info:
-  title: "Chucks Garage API"
+  title: "Coding Garage API"
   description: "API for customers, mechanics, service tickets, inventory, and authentication."
   version: "1.0.0"
 host: "chucksgarage.onrender.com"
