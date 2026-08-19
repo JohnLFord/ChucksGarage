@@ -2,6 +2,7 @@ from flask import jsonify, request
 from marshmallow import ValidationError
 
 from app.extensions import db
+from app.csv_export import csv_response
 from app.models import Mechanic
 from app.utils.util import roles_required, token_required
 
@@ -34,9 +35,9 @@ def get_mechanics():
     mechanics = db.session.execute(query).scalars().all()
     sort_mode = request.args.get("sort", "")
     if sort_mode == "most_tickets":
-        mechanics.sort(key=lambda mechanic: len(mechanic.service_tickets), reverse=True)
+        mechanics.sort(key=lambda mechanic: len(mechanic.sessions), reverse=True)
     elif sort_mode == "fewest_tickets":
-        mechanics.sort(key=lambda mechanic: len(mechanic.service_tickets))
+        mechanics.sort(key=lambda mechanic: len(mechanic.sessions))
 
     limit = request.args.get("limit", type=int)
     offset = request.args.get("offset", 0, type=int)
@@ -46,6 +47,23 @@ def get_mechanics():
         mechanics = mechanics[offset:]
 
     return mechanics_schema.jsonify(mechanics), 200
+
+
+@mechanics_bp.route("/export.csv", methods=["GET"])
+@token_required
+def export_mechanics():
+    mechanics = db.session.execute(db.select(Mechanic).order_by(Mechanic.id)).scalars().all()
+    rows = [
+        {
+            "id": mechanic.id,
+            "name": mechanic.name,
+            "specialty": mechanic.specialty,
+            "experience": mechanic.experience,
+            "certification": mechanic.certification,
+        }
+        for mechanic in mechanics
+    ]
+    return csv_response("teachers.csv", rows, ["id", "name", "specialty", "experience", "certification"])
 
 
 @mechanics_bp.route("/<int:mechanic_id>", methods=["GET"])

@@ -2,6 +2,7 @@ from flask import g, jsonify, request
 from marshmallow import ValidationError
 
 from app.extensions import cache, db
+from app.csv_export import csv_response
 from app.models import Customer, Mechanic, OneToOneSession, Part
 from app.utils.util import roles_required, token_required
 
@@ -49,6 +50,38 @@ def get_sessions():
     elif g.current_user.role != "admin":
         return jsonify({"error": "Insufficient permissions"}), 403
     return sessions_schema.jsonify(db.session.execute(query).scalars().all()), 200
+
+
+@service_tickets_bp.route("/export.csv", methods=["GET"])
+@token_required
+def export_sessions():
+    query = db.select(OneToOneSession).order_by(OneToOneSession.id)
+    if g.current_user.role == "customer":
+        query = query.where(OneToOneSession.student_id == g.current_user.customer_id)
+    elif g.current_user.role == "mechanic":
+        query = query.where(OneToOneSession.teacher_id == g.current_user.mechanic_id)
+    elif g.current_user.role != "admin":
+        return jsonify({"error": "Insufficient permissions"}), 403
+    sessions = db.session.execute(query).scalars().all()
+    rows = [
+        {
+            "id": session.id,
+            "session_date": session.session_date.isoformat(),
+            "student_id": session.student_id,
+            "student_name": session.customer.name,
+            "teacher_id": session.teacher_id,
+            "teacher_name": session.teacher.name,
+            "lesson_id": session.lesson_id,
+            "lesson_name": session.lesson.name,
+            "notes": session.notes or "",
+        }
+        for session in sessions
+    ]
+    return csv_response(
+        "sessions.csv",
+        rows,
+        ["id", "session_date", "student_id", "student_name", "teacher_id", "teacher_name", "lesson_id", "lesson_name", "notes"],
+    )
 
 
 @service_tickets_bp.route("/<int:session_id>", methods=["GET"])

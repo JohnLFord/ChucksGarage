@@ -3,6 +3,7 @@ from marshmallow import ValidationError
 from sqlalchemy import select
 
 from app.extensions import db, limiter
+from app.csv_export import csv_response
 from app.models import Customer
 from app.utils.util import roles_required, token_required
 
@@ -51,6 +52,22 @@ def get_customers():
 
     customers = db.session.execute(query).scalars().all()
     return customers_schema.jsonify(customers), 200
+
+
+@customers_bp.route("/export.csv", methods=["GET"])
+@roles_required("admin", "mechanic")
+def export_customers():
+    customers = db.session.execute(select(Customer).order_by(Customer.id)).scalars().all()
+    rows = [
+        {
+            "id": customer.id,
+            "name": customer.name,
+            "email": customer.email,
+            "date_of_birth": customer.date_of_birth.isoformat(),
+        }
+        for customer in customers
+    ]
+    return csv_response("students.csv", rows, ["id", "name", "email", "date_of_birth"])
 
 
 @customers_bp.route("/<int:customer_id>", methods=["GET"])

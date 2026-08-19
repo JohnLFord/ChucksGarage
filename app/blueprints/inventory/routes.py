@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
+from app.csv_export import csv_response
 from app.models import Part
 from app.utils.util import roles_required, token_required
 
@@ -54,6 +55,17 @@ def get_parts():
 
     parts = db.session.execute(query).scalars().all()
     return parts_schema.jsonify(parts), 200
+
+
+@inventory_bp.route("/export.csv", methods=["GET"])
+@token_required
+def export_parts():
+    parts = db.session.execute(select(Part).order_by(Part.id)).scalars().all()
+    rows = [
+        {"id": part.id, "name": part.name, "sku": part.sku, "stock_quantity": part.stock_quantity}
+        for part in parts
+    ]
+    return csv_response("lessons.csv", rows, ["id", "name", "sku", "stock_quantity"])
 
 
 @inventory_bp.route("/<int:part_id>", methods=["GET"])

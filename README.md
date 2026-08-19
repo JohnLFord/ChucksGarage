@@ -79,6 +79,26 @@ Registration always creates a customer role. To create or promote an administrat
 python -m scripts.create_admin admin@example.com admin-password
 ```
 
+## Local PostgreSQL and Power BI practice
+
+Install PostgreSQL locally, create a `codinglab` database, and use a local `.env` file:
+
+```env
+DATABASE_URL=postgresql://postgres:YOUR_LOCAL_PASSWORD@localhost:5432/codinglab
+JWT_SECRET_KEY=your-local-secret
+RATELIMIT_STORAGE_URI=memory://
+```
+
+Run `python -m scripts.init_db` to create the schema and seed the curriculum lessons. CodingLab can remain deployed on Render for sharing while your local PostgreSQL instance is used for larger analytics exercises.
+
+Each table has an **Export CSV** button in the dashboard. Download Students, Teachers, Lessons, or 1:1 Sessions, then use Power BI Desktop:
+
+```text
+Get Data -> Text/CSV -> select the exported file
+```
+
+In Power Query, set data types, merge session data with the Student, Teacher, and Lesson exports, then build relationships using the exported ID fields.
+
 ## Render configuration
 
 Environment variables:

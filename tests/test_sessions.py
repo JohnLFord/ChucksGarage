@@ -78,3 +78,11 @@ class OneToOneSessionTestCase(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["name"], "Gail Darm")
+
+    def test_csv_exports_return_downloadable_data(self):
+        response = self.client.get("/students/export.csv", headers=self.headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "text/csv")
+        self.assertIn("attachment; filename=\"students.csv\"", response.headers["Content-Disposition"])
+        self.assertIn("Student One", response.get_data(as_text=True))

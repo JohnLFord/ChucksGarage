@@ -5,6 +5,7 @@ import {
   ClipboardList,
   Apple,
   BookOpen,
+  Download,
   LogOut,
   Moon,
   Package,
@@ -73,9 +74,9 @@ function App() {
   const [user, setUser] = useState<Entity | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [resourceId, setResourceId] = useState('customers')
+  const [resourceId, setResourceId] = useState('students')
   const [method, setMethod] = useState<CrudMethod>('GET')
-  const [expandedResourceId, setExpandedResourceId] = useState('customers')
+  const [expandedResourceId, setExpandedResourceId] = useState('students')
   const [records, setRecords] = useState<Entity[]>([])
   const [recordId, setRecordId] = useState('')
   const [endpointPath, setEndpointPath] = useState(resources[0].path)
@@ -132,6 +133,27 @@ function App() {
   async function readRecords(nextResource = resource) {
     const data = await run<Entity[]>(nextResource.path, 'GET')
     if (data) setRecords(data)
+  }
+
+  async function exportCsv() {
+    setError('')
+    setLoading(true)
+    try {
+      const response = await fetch(`${resource.path}export.csv`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!response.ok) throw new Error(`Export failed with status ${response.status}`)
+      const blob = await response.blob()
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `${resource.id}.csv`
+      link.click()
+      URL.revokeObjectURL(link.href)
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : 'Export failed')
+    } finally {
+      setLoading(false)
+    }
   }
 
   function selectAction(nextResource: Resource, nextMethod: CrudMethod) {
@@ -212,7 +234,7 @@ function App() {
       return <div key={item.id} className="nav-group"><button className={item.id === resourceId ? 'nav-item active' : 'nav-item'} onClick={() => setExpandedResourceId(expanded ? '' : item.id)}><Icon size={18} />{item.label}<ChevronDown className={expanded ? 'chevron open' : 'chevron'} size={16} /></button>{expanded && <div className="nav-actions">{actions.map((itemAction) => <button key={itemAction.method} className={item.id === resourceId && method === itemAction.method ? 'nav-action selected' : 'nav-action'} onClick={() => selectAction(item, itemAction.method)}><span className={`nav-method ${itemAction.method.toLowerCase()}`}>{itemAction.method}</span><span>{itemAction.label}</span></button>)}</div>}</div>
     })}<div className="sidebar-footer"><span className="live-dot" />Connected to Render</div></aside>
     <main className="workspace"><section className="page-heading"><div><p className="eyebrow">{action.label} / {method}</p><h1>{resource.label}</h1><p className="subtle">Choose an action in the sidebar, then run the live request below.</p></div><button className="secondary" onClick={() => readRecords()} disabled={loading}><RefreshCw size={17} />Read records</button></section>
-      <section className="data-card"><div className="card-title"><div><h2>{resource.label} table</h2><span>{records.length} loaded record{records.length === 1 ? '' : 's'}</span></div><button className="secondary compact" onClick={() => readRecords()} disabled={loading}><RefreshCw size={16} /></button></div>{records.length === 0 ? <div className="empty-state"><Package size={25} /><p>No records loaded yet.</p><button className="text-button" onClick={() => readRecords()}>Read {resource.label.toLowerCase()}</button></div> : <div className="table-wrap"><table><thead><tr>{resource.columns.map((column) => <th key={column}>{resource.columnLabels[column]}</th>)}</tr></thead><tbody>{records.map((record) => <tr key={record.id}>{resource.columns.map((column) => <td key={column}>{formatCell(record, column)}</td>)}</tr>)}</tbody></table></div>}{resource.id === 'inventory' && method === 'GET' && <div className="lesson-catalog"><div><h3>Add curriculum lessons</h3><p>These presets open the Create Lesson form with the course details ready.</p></div><div className="lesson-presets">{lessonPresets.map((lesson) => <button type="button" key={lesson} onClick={() => { selectAction(resource, 'POST'); selectLessonPreset(lesson) }}>{lesson}</button>)}</div></div>}</section>
+      <section className="data-card"><div className="card-title"><div><h2>{resource.label} table</h2><span>{records.length} loaded record{records.length === 1 ? '' : 's'}</span></div><div className="table-actions"><button className="secondary compact" onClick={exportCsv} disabled={loading} title={`Export ${resource.label} CSV`}><Download size={16} /></button><button className="secondary compact" onClick={() => readRecords()} disabled={loading} title={`Refresh ${resource.label}`}><RefreshCw size={16} /></button></div></div>{records.length === 0 ? <div className="empty-state"><Package size={25} /><p>No records loaded yet.</p><button className="text-button" onClick={() => readRecords()}>Read {resource.label.toLowerCase()}</button></div> : <div className="table-wrap"><table><thead><tr>{resource.columns.map((column) => <th key={column}>{resource.columnLabels[column]}</th>)}</tr></thead><tbody>{records.map((record) => <tr key={record.id}>{resource.columns.map((column) => <td key={column}>{formatCell(record, column)}</td>)}</tr>)}</tbody></table></div>}{resource.id === 'lessons' && method === 'GET' && <div className="lesson-catalog"><div><h3>Add curriculum lessons</h3><p>These presets open the Create Lesson form with the course details ready.</p></div><div className="lesson-presets">{lessonPresets.map((lesson) => <button type="button" key={lesson} onClick={() => { selectAction(resource, 'POST'); selectLessonPreset(lesson) }}>{lesson}</button>)}</div></div>}</section>
       <div className="work-grid"><section className="data-card request-card"><div className="card-title"><div><h2>{action.label} {resource.label}</h2><span>Send a {method} request</span></div><span className={`method-badge ${method.toLowerCase()}`}>{method}</span></div><form onSubmit={submitAction}><label className="endpoint"><span>Endpoint</span><input className="endpoint-input" value={endpointPath} onChange={(event) => setEndpointPath(event.target.value)} aria-label="Endpoint path" /></label>{resource.id === 'service-tickets' && <p className="session-note">Each 1:1 session is one unified record that directly stores the Student ID, Teacher ID, Lesson ID, session date, and what they worked on.</p>}{requiresRecordId && <label className="record-id">{resource.singularLabel} ID<input value={recordId} inputMode="numeric" placeholder="e.g. 1" onChange={(event) => setRecordId(event.target.value)} required /></label>}{method !== 'DELETE' && <label className="json-label">Request JSON<textarea value={body} onChange={(event) => setBody(event.target.value)} spellCheck="false" /></label>}{error && <p className="form-error">{error}</p>}<button className="primary" disabled={loading || (method !== 'GET' && !isAdmin)}>{method === 'GET' ? <RefreshCw size={17} /> : <Save size={17} />}{method === 'GET' ? `Read ${resource.label}` : !isAdmin ? 'Administrator access required' : `${action.label} ${resource.singularLabel}`}</button></form></section>
         <section className="data-card response-card"><div className="card-title"><div><h2>API activity</h2><span>Request and response proof</span></div>{activity && <span className={activity.status < 400 ? 'status ok' : 'status fail'}>{activity.status}</span>}</div>{activity ? <><div className="request-line"><span className="method">{activity.method}</span><code>{activity.path}</code></div>{activity.requestBody !== undefined && <pre className="request-json">{pretty(activity.requestBody)}</pre>}<pre>{pretty(activity.data)}</pre></> : <div className="empty-state"><ClipboardList size={25} /><p>Choose a CRUD action to inspect its live API response.</p></div>}</section>
       </div></main>
