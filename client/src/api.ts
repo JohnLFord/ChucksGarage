@@ -27,9 +27,15 @@ export async function apiRequest<T>(
     body: body === undefined ? undefined : JSON.stringify(body),
   })
   const contentType = response.headers.get('content-type') ?? ''
-  const data = contentType.includes('application/json')
+  const responseData = contentType.includes('application/json')
     ? await response.json()
     : await response.text()
+  const data = response.ok || contentType.includes('application/json')
+    ? responseData
+    : {
+        error: `Request failed with status ${response.status}`,
+        details: 'The server returned an HTML error page. Check the API logs for the underlying exception.',
+      }
 
   if (!response.ok) {
     const message =
