@@ -1,6 +1,5 @@
 from datetime import date
 
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .extensions import Base, db
@@ -37,53 +36,25 @@ class Customer(Base):
     email: Mapped[str] = mapped_column(db.String(360), nullable=False, unique=True)
     date_of_birth: Mapped[date] = mapped_column("DOB", db.Date)
 
-    service_tickets: Mapped[list["Service_Ticket"]] = db.relationship(
+    sessions: Mapped[list["OneToOneSession"]] = db.relationship(
         back_populates="customer"
     )
     user: Mapped["User | None"] = db.relationship(back_populates="customer")
 
 
-class MechanicsServiceTicket(Base):
-    __tablename__ = "mechanics_service_ticket"
-
-    service_ticket_id: Mapped[int] = mapped_column(
-        db.ForeignKey("service_tickets.id"), primary_key=True
-    )
-    mechanic_id: Mapped[int] = mapped_column(
-        db.ForeignKey("mechanics.id"), primary_key=True
-    )
-    assignment_date: Mapped[date] = mapped_column(
-        db.Date, nullable=False, default=date.today
-    )
-    part_ordered: Mapped[bool] = mapped_column(
-        db.Boolean, nullable=False, default=False
-    )
-
-    service_ticket: Mapped["Service_Ticket"] = db.relationship(
-        back_populates="mechanic_assignments"
-    )
-    mechanic: Mapped["Mechanic"] = db.relationship(back_populates="ticket_assignments")
-
-
-class Service_Ticket(Base):
-    __tablename__ = "service_tickets"
+class OneToOneSession(Base):
+    __tablename__ = "one_to_one_sessions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    repair_date: Mapped[date] = mapped_column(db.Date)
-    customer_id: Mapped[int] = mapped_column(db.ForeignKey("customers.id"))
+    session_date: Mapped[date] = mapped_column(db.Date, nullable=False, default=date.today)
+    student_id: Mapped[int] = mapped_column(db.ForeignKey("customers.id"), nullable=False)
+    teacher_id: Mapped[int] = mapped_column(db.ForeignKey("mechanics.id"), nullable=False)
+    lesson_id: Mapped[int] = mapped_column(db.ForeignKey("parts.id"), nullable=False)
+    notes: Mapped[str | None] = mapped_column(db.String(500), nullable=True)
 
-    customer: Mapped["Customer"] = db.relationship(back_populates="service_tickets")
-    mechanic_assignments: Mapped[list["MechanicsServiceTicket"]] = db.relationship(
-        back_populates="service_ticket", cascade="all, delete-orphan"
-    )
-    mechanics = association_proxy(
-        "mechanic_assignments",
-        "mechanic",
-        creator=lambda mechanic: MechanicsServiceTicket(mechanic=mechanic),
-    )
-    part_orders: Mapped[list["ServiceTicketPart"]] = db.relationship(
-        back_populates="service_ticket"
-    )
+    customer: Mapped["Customer"] = db.relationship(back_populates="sessions")
+    teacher: Mapped["Mechanic"] = db.relationship(back_populates="sessions")
+    lesson: Mapped["Part"] = db.relationship(back_populates="sessions")
 
 
 class Part(Base):
@@ -94,26 +65,9 @@ class Part(Base):
     sku: Mapped[str] = mapped_column(db.String(100), nullable=False, unique=True)
     stock_quantity: Mapped[int] = mapped_column(default=0)
 
-    service_ticket_parts: Mapped[list["ServiceTicketPart"]] = db.relationship(
-        back_populates="part"
+    sessions: Mapped[list["OneToOneSession"]] = db.relationship(
+        back_populates="lesson"
     )
-
-
-class ServiceTicketPart(Base):
-    __tablename__ = "service_ticket_parts"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    service_ticket_id: Mapped[int] = mapped_column(
-        db.ForeignKey("service_tickets.id"), nullable=False
-    )
-    part_id: Mapped[int] = mapped_column(db.ForeignKey("parts.id"), nullable=False)
-    quantity: Mapped[int] = mapped_column(default=1)
-    unit_cost: Mapped[float] = mapped_column(db.Float, nullable=False, default=0.0)
-
-    service_ticket: Mapped["Service_Ticket"] = db.relationship(
-        back_populates="part_orders"
-    )
-    part: Mapped["Part"] = db.relationship(back_populates="service_ticket_parts")
 
 
 class Mechanic(Base):
@@ -125,10 +79,9 @@ class Mechanic(Base):
     experience: Mapped[str] = mapped_column(db.String(255), nullable=False)
     certification: Mapped[str] = mapped_column(db.String(255), nullable=False)
 
-    ticket_assignments: Mapped[list["MechanicsServiceTicket"]] = db.relationship(
-        back_populates="mechanic", cascade="all, delete-orphan"
+    sessions: Mapped[list["OneToOneSession"]] = db.relationship(
+        back_populates="teacher"
     )
-    service_tickets = association_proxy("ticket_assignments", "service_ticket")
     user: Mapped["User | None"] = db.relationship(back_populates="mechanic")
 
 

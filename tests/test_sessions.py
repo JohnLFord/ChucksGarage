@@ -1,0 +1,57 @@
+import unittest
+from datetime import date
+
+from werkzeug.security import generate_password_hash
+
+from app import create_app
+from app.extensions import db
+from app.models import Customer, Mechanic, OneToOneSession, Part, User
+
+
+class TestConfig:
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    JWT_SECRET_KEY = "test-only-jwt-signing-key-at-least-32-bytes"
+    RATELIMIT_ENABLED = False
+
+
+class OneToOneSessionTestCase(unittest.TestCase):
+    def setUp(self):
+        self.app = create_app(TestConfig)
+        self.context = self.app.app_context()
+        self.context.push()
+        db.create_all()
+        db.session.add(User(email="admin@example.com", password_hash=generate_password_hash("admin-password"), role="admin"))
+        db.session.add(Customer(name="Student One", email="student@example.com", date_of_birth=date(1990, 1, 1)))
+        db.session.add(Mechanic(name="Teacher One", specialty="React", experience="5 years", certification="Instructor"))
+        db.session.add(Part(name="React", sku="REACT-101", stock_quantity=24))
+        db.session.commit()
+        self.client = self.app.test_client()
+        login = self.client.post("/users/login", json={"email": "admin@example.com", "password": "admin-password"})
+        self.headers = {"Authorization": f"Bearer {login.get_json()['auth_token']}"}
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.context.pop()
+
+    def test_session_unifies_student_teacher_and_lesson(self):
+        response = self.client.post(
+            "/service-tickets/",
+            headers=self.headers,
+            json={"session_date": "2026-08-18", "student_id": 1, "teacher_id": 1, "lesson_id": 1, "notes": "Worked on components."},
+        )
+        self.assertEqual(response.status_code, 201)
+        session = response.get_json()
+        self.assertEqual(session["student_id"], 1)
+        self.assertEqual(session["teacher"]["name"], "Teacher One")
+        self.assertEqual(session["lesson"]["name"], "React")
+        self.assertEqual(db.session.query(OneToOneSession).count(), 1)
+
+    def test_session_requires_existing_links(self):
+        response = self.client.post(
+            "/service-tickets/",
+            headers=self.headers,
+            json={"session_date": "2026-08-18", "student_id": 1, "teacher_id": 99, "lesson_id": 1},
+        )
+        self.assertEqual(response.status_code, 404)

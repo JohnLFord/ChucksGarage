@@ -97,9 +97,9 @@ def delete_part(part_id):
     if not part:
         return jsonify({"error": "Part not found"}), 404
 
-    if part.service_ticket_parts:
+    if part.sessions:
         return jsonify(
-            {"error": "Part has service ticket orders and cannot be deleted"}
+            {"error": "Lesson has sessions and cannot be deleted"}
         ), 409
 
     db.session.delete(part)
