@@ -30,10 +30,10 @@ type Resource = {
 }
 
 const resources: Resource[] = [
-  { id: 'customers', label: 'Students', singularLabel: 'Student', icon: UsersRound, path: '/customers/', template: '{\n  "name": "New Student",\n  "email": "student@example.com",\n  "date_of_birth": "1990-01-01"\n}', columns: ['id', 'name', 'email', 'date_of_birth'], columnLabels: { id: 'ID', name: 'Student', email: 'Email', date_of_birth: 'Date of Birth' } },
-  { id: 'mechanics', label: 'Teachers', singularLabel: 'Teacher', icon: Wrench, path: '/mechanics/', template: '{\n  "name": "Taylor Morgan",\n  "specialty": "React",\n  "experience": "7 years",\n  "certification": "Certified Instructor"\n}', columns: ['id', 'name', 'specialty', 'experience', 'certification'], columnLabels: { id: 'ID', name: 'Teacher', specialty: 'Subject', experience: 'Experience', certification: 'Credentials' } },
-  { id: 'inventory', label: 'Lessons', singularLabel: 'Lesson', icon: Package, path: '/inventory/', template: '{\n  "name": "HTML Foundations",\n  "sku": "HTML-101",\n  "stock_quantity": 24\n}', columns: ['id', 'name', 'sku', 'stock_quantity'], columnLabels: { id: 'ID', name: 'Lesson', sku: 'Course Code', stock_quantity: 'Seats' } },
-  { id: 'service-tickets', label: '1:1 Sessions', singularLabel: '1:1 Session', icon: ClipboardList, path: '/service-tickets/', template: '{\n  "session_date": "2026-08-18",\n  "student_id": 1,\n  "teacher_id": 1,\n  "lesson_id": 1,\n  "notes": "Worked through the lesson objectives."\n}', columns: ['id', 'session_date', 'student_id', 'teacher', 'lesson', 'notes'], columnLabels: { id: 'ID', session_date: 'Session Date', student_id: 'Student ID', teacher: 'Teacher', lesson: 'Lesson', notes: 'What They Worked On' } },
+  { id: 'students', label: 'Students', singularLabel: 'Student', icon: UsersRound, path: '/students/', template: '{\n  "name": "New Student",\n  "email": "student@example.com",\n  "date_of_birth": "1990-01-01"\n}', columns: ['id', 'name', 'email', 'date_of_birth'], columnLabels: { id: 'ID', name: 'Student', email: 'Email', date_of_birth: 'Date of Birth' } },
+  { id: 'teachers', label: 'Teachers', singularLabel: 'Teacher', icon: Wrench, path: '/teachers/', template: '{\n  "name": "Taylor Morgan",\n  "specialty": "React",\n  "experience": "7 years",\n  "certification": "Certified Instructor"\n}', columns: ['id', 'name', 'specialty', 'experience', 'certification'], columnLabels: { id: 'ID', name: 'Teacher', specialty: 'Subject', experience: 'Experience', certification: 'Credentials' } },
+  { id: 'lessons', label: 'Lessons', singularLabel: 'Lesson', icon: Package, path: '/lessons/', template: '{\n  "name": "HTML Foundations",\n  "sku": "HTML-101",\n  "stock_quantity": 24\n}', columns: ['id', 'name', 'sku', 'stock_quantity'], columnLabels: { id: 'ID', name: 'Lesson', sku: 'Course Code', stock_quantity: 'Seats' } },
+  { id: 'sessions', label: '1:1 Sessions', singularLabel: '1:1 Session', icon: ClipboardList, path: '/sessions/', template: '{\n  "session_date": "2026-08-18",\n  "student_id": 1,\n  "teacher_id": 1,\n  "lesson_id": 1,\n  "notes": "Worked through the lesson objectives."\n}', columns: ['id', 'session_date', 'customer', 'teacher', 'lesson', 'notes'], columnLabels: { id: 'ID', session_date: 'Session Date', customer: 'Student', teacher: 'Teacher', lesson: 'Lesson', notes: 'What They Worked On' } },
 ]
 
 const lessonPresets = ['HTML', 'CSS', 'React', 'SQL', 'Python', 'JavaScript', 'TypeScript', 'Firebase', 'Firestore', 'Auth0', 'Render', 'Vercel', 'CI/CD', 'Project Planning', 'Database Design']
@@ -56,6 +56,9 @@ function pretty(value: unknown) {
 function formatCell(record: Entity, column: string) {
   const value = record[column]
   if (column === 'teacher') {
+    return String((value as Entity | undefined)?.name ?? 'Unassigned')
+  }
+  if (column === 'customer') {
     return String((value as Entity | undefined)?.name ?? 'Unassigned')
   }
   if (column === 'lesson') {

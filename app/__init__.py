@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, send_from_directory
 from flask_swagger_ui import get_swaggerui_blueprint
 from werkzeug.exceptions import BadRequest, MethodNotAllowed
 
@@ -61,6 +61,10 @@ def create_app(config_object="config.DevelopmentConfig"):
     app.register_blueprint(inventory_bp)
     app.register_blueprint(mechanics_bp)
     app.register_blueprint(service_tickets_bp)
+    app.register_blueprint(customers_bp, url_prefix="/customers", name="customers_legacy")
+    app.register_blueprint(inventory_bp, url_prefix="/inventory", name="inventory_legacy")
+    app.register_blueprint(mechanics_bp, url_prefix="/mechanics", name="mechanics_legacy")
+    app.register_blueprint(service_tickets_bp, url_prefix="/service-tickets", name="sessions_legacy")
     app.register_blueprint(user_bp, url_prefix="/users")
     app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 

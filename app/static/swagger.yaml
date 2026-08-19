@@ -79,7 +79,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
 
-  /customers:
+  /students:
     get:
       tags:
         - Customers
@@ -113,7 +113,7 @@ paths:
           schema:
             $ref: "#/definitions/Customer"
 
-  /customers/{customer_id}:
+  /students/{customer_id}:
     get:
       tags:
         - Customers
@@ -166,7 +166,7 @@ paths:
         200:
           description: "Customer deleted"
 
-  /mechanics:
+  /teachers:
     get:
       tags:
         - Mechanics
@@ -198,7 +198,7 @@ paths:
           schema:
             $ref: "#/definitions/Mechanic"
 
-  /mechanics/{mechanic_id}:
+  /teachers/{mechanic_id}:
     get:
       tags:
         - Mechanics
@@ -251,7 +251,7 @@ paths:
         200:
           description: "Mechanic deleted"
 
-  /service-tickets:
+  /sessions:
     get:
       tags:
         - Service Tickets
@@ -283,7 +283,7 @@ paths:
           schema:
             $ref: "#/definitions/ServiceTicket"
 
-  /service-tickets/{service_ticket_id}:
+  /sessions/{service_ticket_id}:
     get:
       tags:
         - Service Tickets
@@ -336,7 +336,7 @@ paths:
         200:
           description: "Ticket deleted"
 
-  /service-tickets/{service_ticket_id}/mechanics/{mechanic_id}:
+  /sessions/{service_ticket_id}/teachers/{mechanic_id}:
     post:
       tags:
         - Service Tickets
@@ -356,7 +356,7 @@ paths:
         201:
           description: "Mechanic assigned"
 
-  /service-tickets/{service_ticket_id}/edit:
+  /sessions/{service_ticket_id}/edit:
     put:
       tags:
         - Service Tickets
@@ -379,7 +379,7 @@ paths:
           schema:
             $ref: "#/definitions/ServiceTicket"
 
-  /service-tickets/{service_ticket_id}/parts:
+  /sessions/{service_ticket_id}/parts:
     post:
       tags:
         - Service Tickets
@@ -418,7 +418,7 @@ paths:
             items:
               $ref: "#/definitions/PartOrder"
 
-  /service-tickets/parts/popular:
+  /sessions/parts/popular:
     get:
       tags:
         - Service Tickets
@@ -433,7 +433,7 @@ paths:
             items:
               $ref: "#/definitions/PopularPart"
 
-  /inventory:
+  /lessons:
     get:
       tags:
         - Inventory
@@ -465,7 +465,7 @@ paths:
           schema:
             $ref: "#/definitions/Part"
 
-  /inventory/{part_id}:
+  /lessons/{part_id}:
     get:
       tags:
         - Inventory
@@ -751,3 +751,4 @@ definitions:
         type: integer
       total_used:
         type: integer
+
