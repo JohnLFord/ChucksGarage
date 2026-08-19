@@ -1,6 +1,6 @@
-# Coding Garage
+# CodingLab
 
-Coding Garage is a Render-hosted Flask API with an embedded TypeScript React dashboard for demonstrating authenticated CRUD operations against PostgreSQL.
+CodingLab is a Render-hosted Flask API with an embedded TypeScript React dashboard for demonstrating authenticated CRUD operations against PostgreSQL.
 
 ## Live application
 

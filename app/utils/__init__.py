@@ -1,2 +1,2 @@
-"""Utility helpers for the Coding Garage API."""
+"""Utility helpers for the CodingLab API."""
 
