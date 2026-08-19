@@ -4,9 +4,11 @@ import {
   CircleUserRound,
   ClipboardList,
   LogOut,
+  Moon,
   Package,
   RefreshCw,
   Save,
+  Sun,
   UsersRound,
   Wrench,
 } from 'lucide-react'
@@ -77,6 +79,7 @@ function App() {
   const [activity, setActivity] = useState<ApiResult | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [lightTheme, setLightTheme] = useState(() => localStorage.getItem('cg_theme') === 'light')
 
   const resource = resources.find((item) => item.id === resourceId) ?? resources[0]
   const action = actions.find((item) => item.method === method) ?? actions[0]
@@ -184,12 +187,18 @@ function App() {
     setActivity(null)
   }
 
+  function toggleTheme() {
+    const nextTheme = !lightTheme
+    setLightTheme(nextTheme)
+    localStorage.setItem('cg_theme', nextTheme ? 'light' : 'dark')
+  }
+
   if (!token || !user) {
     return <main className="login-shell"><section className="login-panel"><div className="brand-mark">CG</div><p className="eyebrow">Operations console</p><h1>Coding Garage</h1><p className="subtle">Sign in to manage live learning records through the deployed API.</p><form onSubmit={login} className="login-form"><label>Email<input value={email} type="email" onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input value={password} type="password" onChange={(event) => setPassword(event.target.value)} required /></label>{error && <p className="form-error">{error}</p>}<button className="primary" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</button></form><p className="login-note">Use the administrator account for create, update, and delete actions.</p></section></main>
   }
 
-  return <div className="app-shell">
-    <header className="topbar"><div className="brand"><div className="academy-logo" title="Coding Garage">CG</div><span>Coding Garage</span></div><div className="session"><CircleUserRound size={19} /><span>{String(user.email)}</span><span className="role-pill">{String(user.role)}</span><button onClick={logout} title="Sign out"><LogOut size={18} /></button></div></header>
+  return <div className={lightTheme ? 'app-shell light-theme' : 'app-shell'}>
+    <header className="topbar"><button className="theme-toggle" onClick={toggleTheme} title={lightTheme ? 'Use dark theme' : 'Use light theme'}>{lightTheme ? <Moon size={18} /> : <Sun size={18} />}</button><div className="brand-banner">Coding Garage</div><div className="session"><CircleUserRound size={19} /><span>{String(user.email)}</span><span className="role-pill">{String(user.role)}</span><button onClick={logout} title="Sign out"><LogOut size={18} /></button><div className="academy-logo" title="Coding Garage">CG</div></div></header>
     <aside className="sidebar"><p className="nav-label">CRUD workspace</p>{resources.map((item) => {
       const Icon = item.icon
       const expanded = item.id === expandedResourceId
