@@ -74,6 +74,9 @@ function formatCell(record: Entity, column: string) {
 function App() {
   const [token, setToken] = useState(() => localStorage.getItem('cg_token') ?? '')
   const [user, setUser] = useState<Entity | null>(null)
+  const [isRegistering, setIsRegistering] = useState(false)
+  const [studentName, setStudentName] = useState('')
+  const [dateOfBirth, setDateOfBirth] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -86,6 +89,8 @@ function App() {
   const [body, setBody] = useState(resources[0].template)
   const [sessionFilters, setSessionFilters] = useState({ studentId: '', teacherId: '', lessonId: '', sessionDate: '' })
   const [showSessionHistory, setShowSessionHistory] = useState(false)
+  const [showRoleManagement, setShowRoleManagement] = useState(false)
+  const [promotion, setPromotion] = useState({ studentId: '', name: '', specialty: '', experience: '', certification: '' })
   const [activity, setActivity] = useState<ApiResult | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -175,6 +180,7 @@ function App() {
     setExpandedResourceId(nextResource.id)
     setMethod(nextMethod)
     setShowSessionHistory(false)
+    setShowRoleManagement(false)
     setRecordId('')
     setEndpointPath(defaultEndpoint(nextResource, nextMethod))
     setBody(nextResource.template)
@@ -193,7 +199,15 @@ function App() {
     setBody(sessionsResource.template)
     setError('')
     setShowSessionHistory(true)
+    setShowRoleManagement(false)
     void readRecords(sessionsResource, true)
+  }
+
+  function openRoleManagement() {
+    if (!isAdmin) return
+    setShowRoleManagement(true)
+    setShowSessionHistory(false)
+    setError('')
   }
 
   function selectLessonPreset(lesson: string) {
@@ -211,6 +225,39 @@ function App() {
     const profile = await apiRequest<Entity>('/users/me', 'GET', result.auth_token)
     setActivity(profile)
     setUser(profile.data)
+  }
+
+  async function register(event: React.FormEvent) {
+    event.preventDefault()
+    const registeredUser = await run<Entity>('/users/register', 'POST', {
+      name: studentName,
+      email,
+      password,
+      date_of_birth: dateOfBirth,
+    })
+    if (!registeredUser) return
+    setStudentName('')
+    setDateOfBirth('')
+    setPassword('')
+    setIsRegistering(false)
+    setError('Account created. Sign in with your email and password.')
+  }
+
+  async function promoteStudent(event: React.FormEvent) {
+    event.preventDefault()
+    if (!promotion.studentId) {
+      setError('Enter the Student ID to promote.')
+      return
+    }
+    const result = await run<Entity>(`/users/students/${promotion.studentId}/promote-teacher`, 'POST', {
+      name: promotion.name || undefined,
+      specialty: promotion.specialty,
+      experience: promotion.experience,
+      certification: promotion.certification,
+    })
+    if (!result) return
+    setPromotion({ studentId: '', name: '', specialty: '', experience: '', certification: '' })
+    setError('Student account promoted to Teacher. Their past Student sessions were preserved.')
   }
 
   async function submitAction(event: React.FormEvent) {
@@ -252,7 +299,7 @@ function App() {
   }
 
   if (!token || !user) {
-    return <main className="login-shell"><section className="login-panel"><div className="brand-mark">CL</div><p className="eyebrow">Operations console</p><h1 className="login-wordmark">CodingLab</h1><p className="subtle">Sign in to manage live learning records through the deployed API.</p><form onSubmit={login} className="login-form"><label>Email<input value={email} type="email" onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<span className="password-field"><input value={password} type={showPassword ? 'text' : 'password'} onChange={(event) => setPassword(event.target.value)} required /><button type="button" className="password-visibility" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Hide password' : 'Show password'} title={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></span></label>{error && <p className="form-error">{error}</p>}<button className="primary" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</button></form><p className="login-note">Use the administrator account for create, update, and delete actions.</p></section></main>
+    return <main className="login-shell"><section className="login-panel"><div className="brand-mark">CL</div><p className="eyebrow">{isRegistering ? 'Student registration' : 'Operations console'}</p><h1 className="login-wordmark">CodingLab</h1><p className="subtle">{isRegistering ? 'Create a Student account to view your own learning sessions.' : 'Sign in to manage live learning records through the deployed API.'}</p><form onSubmit={isRegistering ? register : login} className="login-form">{isRegistering && <><label>Name<input value={studentName} onChange={(event) => setStudentName(event.target.value)} required /></label><label>Date of birth<input value={dateOfBirth} type="date" onChange={(event) => setDateOfBirth(event.target.value)} required /></label></>}<label>Email<input value={email} type="email" onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<span className="password-field"><input value={password} type={showPassword ? 'text' : 'password'} minLength={8} onChange={(event) => setPassword(event.target.value)} required /><button type="button" className="password-visibility" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Hide password' : 'Show password'} title={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></span></label>{error && <p className="form-error">{error}</p>}<button className="primary" disabled={loading}>{loading ? 'Working...' : isRegistering ? 'Create Student Account' : 'Sign in'}</button></form><button className="text-button account-switch" type="button" onClick={() => { setIsRegistering((registering) => !registering); setError(''); setPassword('') }}>{isRegistering ? 'Already have an account? Sign in' : 'Need an account? Register as a Student'}</button><p className="login-note">Teacher and administrator accounts are created by an administrator.</p></section></main>
   }
 
   return <div className={lightTheme ? 'app-shell light-theme' : 'app-shell'}>
@@ -261,9 +308,10 @@ function App() {
       const Icon = item.icon
       const expanded = item.id === expandedResourceId
       return <div key={item.id} className="nav-group"><button className={item.id === resourceId ? 'nav-item active' : 'nav-item'} onClick={() => setExpandedResourceId(expanded ? '' : item.id)}><Icon size={18} />{item.label}<ChevronDown className={expanded ? 'chevron open' : 'chevron'} size={16} /></button>{expanded && <div className="nav-actions">{actions.map((itemAction) => <button key={itemAction.method} className={item.id === resourceId && method === itemAction.method ? 'nav-action selected' : 'nav-action'} onClick={() => selectAction(item, itemAction.method)}><span className={`nav-method ${itemAction.method.toLowerCase()}`}>{itemAction.method}</span><span>{itemAction.label}</span></button>)}</div>}</div>
-    })}<div className="history-nav"><p className="nav-label">Reports</p><button className={showSessionHistory ? 'history-nav-item active' : 'history-nav-item'} onClick={openSessionHistory} disabled={!isAdmin} title={isAdmin ? 'View and filter all sessions' : 'Administrator access required'}><ClipboardList size={18} />Session History</button></div><div className="sidebar-footer"><span className="live-dot" />Connected to Render</div></aside>
+    })}<div className="history-nav"><p className="nav-label">Reports</p><button className={showSessionHistory ? 'history-nav-item active' : 'history-nav-item'} onClick={openSessionHistory} disabled={!isAdmin} title={isAdmin ? 'View and filter all sessions' : 'Administrator access required'}><ClipboardList size={18} />Session History</button></div><div className="history-nav"><p className="nav-label">Administration</p><button className={showRoleManagement ? 'history-nav-item active' : 'history-nav-item'} onClick={openRoleManagement} disabled={!isAdmin} title={isAdmin ? 'Promote a Student account to Teacher' : 'Administrator access required'}><CircleUserRound size={18} />Role Management</button></div><div className="sidebar-footer"><span className="live-dot" />Connected to Render</div></aside>
     <main className="workspace"><section className="page-heading"><div><p className="eyebrow">{action.label} / {method}</p><h1>{resource.label}</h1><p className="subtle">Choose an action in the sidebar, then run the live request below.</p></div><button className="secondary" onClick={() => readRecords()} disabled={loading}><RefreshCw size={17} />Read records</button></section>
       <section className="data-card"><div className="card-title"><div><h2>{showSessionHistory ? 'Session History' : `${resource.label} table`}</h2><span>{records.length} loaded record{records.length === 1 ? '' : 's'}</span></div><div className="table-actions"><button className="secondary compact" onClick={exportCsv} disabled={loading} title={`Export ${resource.label} CSV`}><Download size={16} /></button><button className="secondary compact" onClick={() => readRecords(resource, showSessionHistory)} disabled={loading} title={`Refresh ${resource.label}`}><RefreshCw size={16} /></button></div></div>{records.length === 0 ? <div className="empty-state"><Package size={25} /><p>No records loaded yet.</p><button className="text-button" onClick={() => readRecords(resource, showSessionHistory)}>Read {resource.label.toLowerCase()}</button></div> : <div className="table-wrap"><table><thead><tr>{resource.columns.map((column) => <th key={column}>{resource.columnLabels[column]}</th>)}</tr></thead><tbody>{records.map((record) => <tr key={record.id}>{resource.columns.map((column) => <td key={column}>{formatCell(record, column)}</td>)}</tr>)}</tbody></table></div>}{resource.id === 'lessons' && method === 'GET' && <div className="lesson-catalog"><div><h3>Add curriculum lessons</h3><p>These presets open the Create Lesson form with the course details ready.</p></div><div className="lesson-presets">{lessonPresets.map((lesson) => <button type="button" key={lesson} onClick={() => { selectAction(resource, 'POST'); selectLessonPreset(lesson) }}>{lesson}</button>)}</div></div>}{showSessionHistory && <div className="session-history"><div><h3>All sessions</h3><p>Filter by student, teacher, lesson, or date.</p></div><div className="session-filter-fields"><label>Student ID<input value={sessionFilters.studentId} inputMode="numeric" onChange={(event) => setSessionFilters({ ...sessionFilters, studentId: event.target.value })} /></label><label>Teacher ID<input value={sessionFilters.teacherId} inputMode="numeric" onChange={(event) => setSessionFilters({ ...sessionFilters, teacherId: event.target.value })} /></label><label>Lesson ID<input value={sessionFilters.lessonId} inputMode="numeric" onChange={(event) => setSessionFilters({ ...sessionFilters, lessonId: event.target.value })} /></label><label>Date<input value={sessionFilters.sessionDate} type="date" onChange={(event) => setSessionFilters({ ...sessionFilters, sessionDate: event.target.value })} /></label><button className="secondary" type="button" onClick={() => readRecords(resource, true)} disabled={loading}>Apply</button><button className="text-button" type="button" onClick={() => { setSessionFilters({ studentId: '', teacherId: '', lessonId: '', sessionDate: '' }); void readRecords(resource) }} disabled={loading}>Clear</button></div></div>}</section>
+      {showRoleManagement && <section className="data-card role-management"><div className="card-title"><div><h2>Promote Student to Teacher</h2><span>Preserves the Student record and past Sessions</span></div></div><form onSubmit={promoteStudent}><label>Student ID<input value={promotion.studentId} inputMode="numeric" required onChange={(event) => setPromotion({ ...promotion, studentId: event.target.value })} /></label><label>Teacher display name <span>Optional</span><input value={promotion.name} onChange={(event) => setPromotion({ ...promotion, name: event.target.value })} /></label><label>Subject / specialty<input value={promotion.specialty} required onChange={(event) => setPromotion({ ...promotion, specialty: event.target.value })} /></label><label>Experience<input value={promotion.experience} required onChange={(event) => setPromotion({ ...promotion, experience: event.target.value })} /></label><label>Credentials<input value={promotion.certification} required onChange={(event) => setPromotion({ ...promotion, certification: event.target.value })} /></label><button className="primary" disabled={loading}>Promote to Teacher</button></form>{error && <p className="form-error">{error}</p>}</section>}
       <div className="work-grid"><section className="data-card request-card"><div className="card-title"><div><h2>{action.label} {resource.label}</h2><span>Send a {method} request</span></div><span className={`method-badge ${method.toLowerCase()}`}>{method}</span></div><form onSubmit={submitAction}><label className="endpoint"><span>Endpoint</span><input className="endpoint-input" value={endpointPath} onChange={(event) => setEndpointPath(event.target.value)} aria-label="Endpoint path" /></label>{resource.id === 'service-tickets' && <p className="session-note">Each 1:1 session is one unified record that directly stores the Student ID, Teacher ID, Lesson ID, session date, and what they worked on.</p>}{requiresRecordId && <label className="record-id">{resource.singularLabel} ID<input value={recordId} inputMode="numeric" placeholder="e.g. 1" onChange={(event) => setRecordId(event.target.value)} required /></label>}{method !== 'DELETE' && <label className="json-label">Request JSON<textarea value={body} onChange={(event) => setBody(event.target.value)} spellCheck="false" /></label>}{error && <p className="form-error">{error}</p>}<button className="primary" disabled={loading || (method !== 'GET' && !isAdmin)}>{method === 'GET' ? <RefreshCw size={17} /> : <Save size={17} />}{method === 'GET' ? `Read ${resource.label}` : !isAdmin ? 'Administrator access required' : `${action.label} ${resource.singularLabel}`}</button></form></section>
         <section className="data-card response-card"><div className="card-title"><div><h2>API activity</h2><span>Request and response proof</span></div>{activity && <span className={activity.status < 400 ? 'status ok' : 'status fail'}>{activity.status}</span>}</div>{activity ? <><div className="request-line"><span className="method">{activity.method}</span><code>{activity.path}</code></div>{activity.requestBody !== undefined && <pre className="request-json">{pretty(activity.requestBody)}</pre>}<pre>{pretty(activity.data)}</pre></> : <div className="empty-state"><ClipboardList size={25} /><p>Choose a CRUD action to inspect its live API response.</p></div>}</section>
       </div></main>

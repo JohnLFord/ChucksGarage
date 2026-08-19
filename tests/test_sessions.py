@@ -74,6 +74,34 @@ class SessionTestCase(unittest.TestCase):
         self.assertEqual(len(response.get_json()), 1)
         self.assertEqual(response.get_json()[0]["student"]["name"], "Student Two")
 
+    def test_admin_can_promote_student_to_teacher_without_removing_history(self):
+        student = db.session.get(Student, 1)
+        user = User(
+            email=student.email,
+            password_hash=generate_password_hash("student-password"),
+            role="student",
+            student=student,
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        response = self.client.post(
+            "/users/students/1/promote-teacher",
+            headers=self.headers,
+            json={
+                "specialty": "Python",
+                "experience": "2 years",
+                "certification": "Instructor",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        promoted_user = db.session.get(User, user.id)
+        self.assertEqual(promoted_user.role, "teacher")
+        self.assertEqual(promoted_user.student_id, 1)
+        self.assertIsNotNone(promoted_user.teacher_id)
+        self.assertEqual(promoted_user.teacher.specialty, "Python")
+
     def test_linked_student_and_teacher_cannot_be_deleted(self):
         self.client.post(
             "/sessions/",
