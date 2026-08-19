@@ -202,7 +202,7 @@ function App() {
   }
 
   return <div className={lightTheme ? 'app-shell light-theme' : 'app-shell'}>
-    <header className="topbar"><div className="brand"><div className="academy-logo" title="Coding Garage">CG</div></div><div className="brand-banner">Coding Garage</div><div className="session"><CircleUserRound size={19} /><span>{String(user.email)}</span><span className="role-pill">{String(user.role)}</span><button onClick={logout} title="Sign out"><LogOut size={18} /></button><button className="theme-toggle" onClick={toggleTheme} title={lightTheme ? 'Use dark theme' : 'Use light theme'}>{lightTheme ? <Moon size={18} /> : <Sun size={18} />}</button></div></header>
+    <header className="topbar"><div className="brand"><button className="theme-toggle" onClick={toggleTheme} title={lightTheme ? 'Use dark theme' : 'Use light theme'}>{lightTheme ? <Moon size={18} /> : <Sun size={18} />}</button><span className="theme-label">Toggle {lightTheme ? 'dark' : 'light'} theme</span></div><div className="brand-banner">Coding Garage</div><div className="session"><CircleUserRound size={19} /><span>{String(user.email)}</span><span className="role-pill">{String(user.role)}</span><button onClick={logout} title="Sign out"><LogOut size={18} /></button></div></header>
     <aside className="sidebar"><p className="nav-label">CRUD workspace</p>{resources.map((item) => {
       const Icon = item.icon
       const expanded = item.id === expandedResourceId
