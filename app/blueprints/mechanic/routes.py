@@ -83,6 +83,8 @@ def delete_mechanic(mechanic_id):
     mechanic = db.session.get(Mechanic, mechanic_id)
     if not mechanic:
         return jsonify({"error": "Mechanic not found"}), 404
+    if mechanic.sessions:
+        return jsonify({"error": "Teacher has 1:1 sessions and cannot be deleted"}), 409
     if mechanic.user:
         return jsonify({"error": "Mechanic has a user account and cannot be deleted"}), 409
 

@@ -97,9 +97,9 @@ def delete_customer(customer_id):
     if not customer:
         return jsonify({"error": "Customer not found"}), 404
 
-    if customer.service_tickets:
+    if customer.sessions:
         return jsonify(
-            {"error": "Customer has service tickets and cannot be deleted"}
+            {"error": "Student has 1:1 sessions and cannot be deleted"}
         ), 409
     if customer.user:
         return jsonify({"error": "Customer has a user account and cannot be deleted"}), 409

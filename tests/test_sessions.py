@@ -55,3 +55,16 @@ class OneToOneSessionTestCase(unittest.TestCase):
             json={"session_date": "2026-08-18", "student_id": 1, "teacher_id": 99, "lesson_id": 1},
         )
         self.assertEqual(response.status_code, 404)
+
+    def test_linked_student_and_teacher_cannot_be_deleted(self):
+        self.client.post(
+            "/service-tickets/",
+            headers=self.headers,
+            json={"session_date": "2026-08-18", "student_id": 1, "teacher_id": 1, "lesson_id": 1},
+        )
+
+        student_response = self.client.delete("/students/1", headers=self.headers)
+        teacher_response = self.client.delete("/teachers/1", headers=self.headers)
+
+        self.assertEqual(student_response.status_code, 409)
+        self.assertEqual(teacher_response.status_code, 409)
