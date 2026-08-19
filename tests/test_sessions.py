@@ -102,6 +102,28 @@ class SessionTestCase(unittest.TestCase):
         self.assertIsNotNone(promoted_user.teacher_id)
         self.assertEqual(promoted_user.teacher.specialty, "Python")
 
+        response = self.client.get("/students/", headers=self.headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), [])
+
+    def test_admin_can_delete_student_and_unlinked_student_account(self):
+        student = db.session.get(Student, 1)
+        user = User(
+            email=student.email,
+            password_hash=generate_password_hash("student-password"),
+            role="student",
+            student=student,
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        response = self.client.delete("/students/1", headers=self.headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(db.session.get(Student, 1))
+        self.assertIsNone(db.session.get(User, user.id))
+
     def test_linked_student_and_teacher_cannot_be_deleted(self):
         self.client.post(
             "/sessions/",

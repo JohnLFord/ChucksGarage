@@ -74,6 +74,17 @@ paths:
       security: [{Bearer: []}]
       parameters: [{$ref: "#/parameters/StudentId"}]
       responses: {200: {description: "Student deleted"}}
+  /users/students/{student_id}/promote-teacher:
+    post:
+      tags: [Users]
+      summary: "Promote a Student account to Teacher"
+      description: "Administrator only. Preserves the Student record and past session history."
+      security: [{Bearer: []}]
+      parameters: [{$ref: "#/parameters/StudentId"}, {$ref: "#/parameters/TeacherPromotionBody"}]
+      responses:
+        200: {description: "Account promoted", schema: {$ref: "#/definitions/User"}}
+        404: {description: "Student account not found", schema: {$ref: "#/definitions/Error"}}
+        409: {description: "Account is already a Teacher", schema: {$ref: "#/definitions/Error"}}
   /teachers:
     get:
       tags: [Teachers]
@@ -204,6 +215,7 @@ parameters:
   TeacherBody: {name: body, in: body, required: true, schema: {$ref: "#/definitions/TeacherInput"}}
   LessonBody: {name: body, in: body, required: true, schema: {$ref: "#/definitions/LessonInput"}}
   SessionBody: {name: body, in: body, required: true, schema: {$ref: "#/definitions/SessionInput"}}
+  TeacherPromotionBody: {name: body, in: body, required: true, schema: {$ref: "#/definitions/TeacherPromotionInput"}}
 definitions:
   RegisterRequest:
     type: object
@@ -255,6 +267,14 @@ definitions:
       - $ref: "#/definitions/TeacherInput"
       - type: object
         properties: {id: {type: integer}}
+  TeacherPromotionInput:
+    type: object
+    required: [specialty, experience, certification]
+    properties:
+      name: {type: string}
+      specialty: {type: string}
+      experience: {type: string}
+      certification: {type: string}
   LessonInput:
     type: object
     required: [name, sku, stock_quantity]

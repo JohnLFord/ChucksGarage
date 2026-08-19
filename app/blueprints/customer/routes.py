@@ -1,10 +1,10 @@
 from flask import g, jsonify, request
 from marshmallow import ValidationError
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from app.extensions import db, limiter
 from app.csv_export import csv_response
-from app.models import Student
+from app.models import Student, User
 from app.utils.util import roles_required, token_required
 
 from . import customers_bp
@@ -35,7 +35,11 @@ def create_customer():
 @roles_required("admin", "teacher")
 @roles_required("admin", "teacher")
 def get_customers():
-    query = select(Student)
+    query = (
+        select(Student)
+        .outerjoin(User, Student.id == User.student_id)
+        .where(or_(User.id.is_(None), User.role == "student"))
+    )
     search = request.args.get("search", "", type=str)
     if search:
         query = query.where(Student.name.ilike(f"%{search}%"))
@@ -58,7 +62,12 @@ def get_customers():
 @customers_bp.route("/export.csv", methods=["GET"])
 @roles_required("admin", "teacher")
 def export_customers():
-    students = db.session.execute(select(Student).order_by(Student.id)).scalars().all()
+    students = db.session.execute(
+        select(Student)
+        .outerjoin(User, Student.id == User.student_id)
+        .where(or_(User.id.is_(None), User.role == "student"))
+        .order_by(Student.id)
+    ).scalars().all()
     rows = [
         {
             "id": student.id,
@@ -119,9 +128,11 @@ def delete_customer(customer_id):
         return jsonify(
             {"error": "Student has 1:1 sessions and cannot be deleted"}
         ), 409
-    if student.user:
-        return jsonify({"error": "Student has a user account and cannot be deleted"}), 409
+    if student.user and student.user.role != "student":
+        return jsonify({"error": "Promoted Teacher history cannot be deleted"}), 409
 
+    if student.user:
+        db.session.delete(student.user)
     db.session.delete(student)
     db.session.commit()
     return jsonify(
