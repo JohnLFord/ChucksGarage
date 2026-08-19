@@ -68,3 +68,13 @@ class OneToOneSessionTestCase(unittest.TestCase):
 
         self.assertEqual(student_response.status_code, 409)
         self.assertEqual(teacher_response.status_code, 409)
+
+    def test_student_updates_through_students_endpoint(self):
+        response = self.client.put(
+            "/students/1",
+            headers=self.headers,
+            json={"name": "Gail Darm", "email": "student@example.com", "date_of_birth": "1949-08-18"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["name"], "Gail Darm")

@@ -89,7 +89,10 @@ function App() {
   const action = actions.find((item) => item.method === method) ?? actions[0]
   const isAdmin = user?.role === 'admin'
   const requiresRecordId = method === 'PUT' || method === 'DELETE'
-  const resolvedEndpoint = endpointPath.replace(':id', recordId)
+  const resolvedEndpoint = endpointPath
+    .trim()
+    .replace(/:id(?:\/\d+)?/, recordId)
+    .replace(/\/{2,}/g, '/')
 
   useEffect(() => {
     if (!token) return
