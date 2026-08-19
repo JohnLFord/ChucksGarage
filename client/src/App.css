@@ -54,13 +54,14 @@ tbody tr:hover { color: #1b2737; background: linear-gradient(112deg, #d9e2ed 0%,
 .record-id input { color: #17283b; background: #f3f6f8; border-color: #7f9ab4; box-shadow: inset 0 1px 3px rgba(8, 24, 48, .12); font-weight: 500; }
 .json-label textarea:focus,
 .record-id input:focus { outline: 2px solid rgba(56, 189, 248, .72); outline-offset: 2px; background: #ffffff; }
-.response-card pre { color: #eafff8; background: #0a8b70; border: 1px solid rgba(65, 255, 200, .42); box-shadow: inset 0 0 28px rgba(86, 255, 204, .12); }
+.response-card pre { color: #17283b; background: #f3f6f8; border: 1px solid #7f9ab4; box-shadow: inset 0 1px 3px rgba(8, 24, 48, .12); }
 .response-card .request-json { color: #183f38; background: #d7f3e0; border-color: rgba(34, 197, 94, .35); box-shadow: none; }
 .lesson-presets { display: grid; gap: 8px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
 .lesson-presets > div { display: flex; flex-wrap: wrap; gap: 7px; }
 .lesson-presets button { border: 1px solid rgba(56, 189, 248, .52); border-radius: 999px; padding: 5px 9px; background: rgba(15, 23, 42, .7); color: #cbeeff; font-size: 11px; font-weight: 700; transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
 .lesson-presets button:hover { transform: translateY(-1px); color: #102635; background: linear-gradient(112deg, #38bdf8 0%, #9be3f8 40%, #f0fff8 50%, #8ef1c8 60%, #22c55e 100%); background-size: 220% 100%; box-shadow: 0 8px 18px rgba(8, 24, 48, .28); animation: destinationSweep 1.3s linear infinite; }
 .session-note { margin: 0; padding: 10px 12px; color: #cbeeff; background: rgba(56, 189, 248, .12); border-left: 3px solid #38bdf8; border-radius: 4px; font-size: 12px; line-height: 1.5; }
+.junction-controls { padding: 18px 20px; border-top: 1px solid var(--line); background: rgba(56, 189, 248, .06); }.junction-controls h3 { margin: 0 0 4px; color: #d7f3e0; font-size: 13px; }.junction-controls p { margin: 0 0 12px; color: var(--muted); font-size: 12px; line-height: 1.45; }.junction-fields { display: grid; grid-template-columns: 1fr 1fr auto; gap: 9px; align-items: end; }.junction-fields label { display: grid; gap: 5px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }.junction-fields input { min-width: 0; border: 1px solid #7f9ab4; border-radius: 4px; padding: 8px; color: #17283b; background: #f3f6f8; font-family: 'DM Mono', monospace; }.junction-fields button { border: 1px solid rgba(56, 189, 248, .52); border-radius: 6px; padding: 9px 10px; color: #cbeeff; background: rgba(15, 23, 42, .7); font-weight: 800; font-size: 12px; }.junction-fields button:hover { color: #102635; background: linear-gradient(112deg, #38bdf8 0%, #9be3f8 40%, #f0fff8 50%, #8ef1c8 60%, #22c55e 100%); background-size: 220% 100%; animation: destinationSweep 1.3s linear infinite; }.junction-fields label:nth-of-type(3) { grid-column: 1 / 3; }
 .endpoint-input { width: 100%; padding: 10px; color: #17283b; background: #f3f6f8; border: 1px solid #7f9ab4; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 12px; }
 .endpoint-input:focus { outline: 2px solid rgba(56, 189, 248, .72); outline-offset: 2px; background: #ffffff; }
 .lesson-catalog { display: grid; grid-template-columns: minmax(180px, .55fr) 1.45fr; gap: 18px; padding: 16px 20px; border-bottom: 1px solid var(--line); background: linear-gradient(120deg, rgba(56, 189, 248, .08), rgba(34, 197, 94, .06)); }
@@ -68,3 +69,4 @@ tbody tr:hover { color: #1b2737; background: linear-gradient(112deg, #d9e2ed 0%,
 .lesson-catalog .lesson-presets { display: flex; flex-wrap: wrap; align-content: center; gap: 7px; }
 .lesson-catalog .lesson-presets button { padding: 6px 10px; }
 @media (max-width: 860px) { .lesson-catalog { grid-template-columns: 1fr; } }
+@media (max-width: 860px) { .junction-fields { grid-template-columns: 1fr; }.junction-fields label:nth-of-type(3) { grid-column: auto; } }

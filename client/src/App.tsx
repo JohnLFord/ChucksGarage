@@ -72,6 +72,9 @@ function App() {
   const [expandedResourceId, setExpandedResourceId] = useState('customers')
   const [records, setRecords] = useState<Entity[]>([])
   const [recordId, setRecordId] = useState('')
+  const [sessionId, setSessionId] = useState('')
+  const [teacherId, setTeacherId] = useState('')
+  const [lessonId, setLessonId] = useState('')
   const [endpointPath, setEndpointPath] = useState(resources[0].path)
   const [body, setBody] = useState(resources[0].template)
   const [activity, setActivity] = useState<ApiResult | null>(null)
@@ -175,6 +178,30 @@ function App() {
     if (result) await readRecords()
   }
 
+  async function linkTeacherToSession(event: React.FormEvent) {
+    event.preventDefault()
+    if (!sessionId || !teacherId) {
+      setError('Enter both a session ID and teacher ID.')
+      return
+    }
+    const result = await run(`/service-tickets/${sessionId}/mechanics/${teacherId}`, 'POST')
+    if (result) await readRecords()
+  }
+
+  async function linkLessonToSession(event: React.FormEvent) {
+    event.preventDefault()
+    if (!sessionId || !lessonId) {
+      setError('Enter both a session ID and lesson ID.')
+      return
+    }
+    const result = await run(`/service-tickets/${sessionId}/parts`, 'POST', {
+      part_id: Number(lessonId),
+      quantity: 1,
+      unit_cost: 0,
+    })
+    if (result) await readRecords()
+  }
+
   function logout() {
     localStorage.removeItem('cg_token')
     setToken('')
@@ -188,7 +215,7 @@ function App() {
   }
 
   return <div className="app-shell">
-    <header className="topbar"><div className="brand"><span>Coding Garage</span></div><div className="session"><CircleUserRound size={19} /><span>{String(user.email)}</span><span className="role-pill">{String(user.role)}</span><button onClick={logout} title="Sign out"><LogOut size={18} /></button><div className="academy-logo" title="Coding Garage">CG</div></div></header>
+    <header className="topbar"><div className="brand"><div className="academy-logo" title="Coding Garage">CG</div><span>Coding Garage</span></div><div className="session"><CircleUserRound size={19} /><span>{String(user.email)}</span><span className="role-pill">{String(user.role)}</span><button onClick={logout} title="Sign out"><LogOut size={18} /></button></div></header>
     <aside className="sidebar"><p className="nav-label">CRUD workspace</p>{resources.map((item) => {
       const Icon = item.icon
       const expanded = item.id === expandedResourceId
@@ -196,7 +223,7 @@ function App() {
     })}<div className="sidebar-footer"><span className="live-dot" />Connected to Render</div></aside>
     <main className="workspace"><section className="page-heading"><div><p className="eyebrow">{action.label} / {method}</p><h1>{resource.label}</h1><p className="subtle">Choose an action in the sidebar, then run the live request below.</p></div><button className="secondary" onClick={() => readRecords()} disabled={loading}><RefreshCw size={17} />Read records</button></section>
       <section className="data-card"><div className="card-title"><div><h2>{resource.label} table</h2><span>{records.length} loaded record{records.length === 1 ? '' : 's'}</span></div><button className="secondary compact" onClick={() => readRecords()} disabled={loading}><RefreshCw size={16} /></button></div>{resource.id === 'inventory' && method === 'GET' && <div className="lesson-catalog"><div><h3>Curriculum lesson catalog</h3><p>Select a lesson to open its Create form with the course details ready.</p></div><div className="lesson-presets">{lessonPresets.map((lesson) => <button type="button" key={lesson} onClick={() => { selectAction(resource, 'POST'); selectLessonPreset(lesson) }}>{lesson}</button>)}</div></div>}{records.length === 0 ? <div className="empty-state"><Package size={25} /><p>No records loaded yet.</p><button className="text-button" onClick={() => readRecords()}>Read {resource.label.toLowerCase()}</button></div> : <div className="table-wrap"><table><thead><tr>{resource.columns.map((column) => <th key={column}>{resource.columnLabels[column]}</th>)}</tr></thead><tbody>{records.map((record) => <tr key={record.id}>{resource.columns.map((column) => <td key={column}>{formatCell(record, column)}</td>)}</tr>)}</tbody></table></div>}</section>
-      <div className="work-grid"><section className="data-card request-card"><div className="card-title"><div><h2>{action.label} {resource.label}</h2><span>Send a {method} request</span></div><span className={`method-badge ${method.toLowerCase()}`}>{method}</span></div><form onSubmit={submitAction}><label className="endpoint"><span>Endpoint</span><input className="endpoint-input" value={endpointPath} onChange={(event) => setEndpointPath(event.target.value)} aria-label="Endpoint path" /></label>{resource.id === 'service-tickets' && <p className="session-note">A 1:1 session links one student to an assigned teacher. The table shows the teacher and lessons worked on after they are assigned.</p>}{requiresRecordId && <label className="record-id">{resource.singularLabel} ID<input value={recordId} inputMode="numeric" placeholder="e.g. 1" onChange={(event) => setRecordId(event.target.value)} required /></label>}{method !== 'DELETE' && <label className="json-label">Request JSON<textarea value={body} onChange={(event) => setBody(event.target.value)} spellCheck="false" /></label>}{error && <p className="form-error">{error}</p>}<button className="primary" disabled={loading || (method !== 'GET' && !isAdmin)}>{method === 'GET' ? <RefreshCw size={17} /> : <Save size={17} />}{method === 'GET' ? `Read ${resource.label}` : !isAdmin ? 'Administrator access required' : `${action.label} ${resource.singularLabel}`}</button></form></section>
+      <div className="work-grid"><section className="data-card request-card"><div className="card-title"><div><h2>{action.label} {resource.label}</h2><span>Send a {method} request</span></div><span className={`method-badge ${method.toLowerCase()}`}>{method}</span></div><form onSubmit={submitAction}><label className="endpoint"><span>Endpoint</span><input className="endpoint-input" value={endpointPath} onChange={(event) => setEndpointPath(event.target.value)} aria-label="Endpoint path" /></label>{resource.id === 'service-tickets' && <p className="session-note">Create a session with a Student ID, then use the two link controls below to create its Teacher and Lesson junction records.</p>}{requiresRecordId && <label className="record-id">{resource.singularLabel} ID<input value={recordId} inputMode="numeric" placeholder="e.g. 1" onChange={(event) => setRecordId(event.target.value)} required /></label>}{method !== 'DELETE' && <label className="json-label">Request JSON<textarea value={body} onChange={(event) => setBody(event.target.value)} spellCheck="false" /></label>}{error && <p className="form-error">{error}</p>}<button className="primary" disabled={loading || (method !== 'GET' && !isAdmin)}>{method === 'GET' ? <RefreshCw size={17} /> : <Save size={17} />}{method === 'GET' ? `Read ${resource.label}` : !isAdmin ? 'Administrator access required' : `${action.label} ${resource.singularLabel}`}</button></form>{resource.id === 'service-tickets' && isAdmin && <div className="junction-controls"><h3>1:1 Session links</h3><p>These calls create the session-to-teacher and session-to-lesson junction records.</p><div className="junction-fields"><label>Session ID<input value={sessionId} inputMode="numeric" onChange={(event) => setSessionId(event.target.value)} placeholder="e.g. 1" /></label><label>Teacher ID<input value={teacherId} inputMode="numeric" onChange={(event) => setTeacherId(event.target.value)} placeholder="e.g. 1" /></label><button type="button" onClick={linkTeacherToSession} disabled={loading}>Link teacher</button><label>Lesson ID<input value={lessonId} inputMode="numeric" onChange={(event) => setLessonId(event.target.value)} placeholder="e.g. 1" /></label><button type="button" onClick={linkLessonToSession} disabled={loading}>Link lesson</button></div></div>}</section>
         <section className="data-card response-card"><div className="card-title"><div><h2>API activity</h2><span>Request and response proof</span></div>{activity && <span className={activity.status < 400 ? 'status ok' : 'status fail'}>{activity.status}</span>}</div>{activity ? <><div className="request-line"><span className="method">{activity.method}</span><code>{activity.path}</code></div>{activity.requestBody !== undefined && <pre className="request-json">{pretty(activity.requestBody)}</pre>}<pre>{pretty(activity.data)}</pre></> : <div className="empty-state"><ClipboardList size={25} /><p>Choose a CRUD action to inspect its live API response.</p></div>}</section>
       </div></main>
   </div>
